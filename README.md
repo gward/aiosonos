@@ -3,7 +3,7 @@
 aiosonos is a client library for Sonos products
 based on asyncio and aiohttp.
 It is derived from
-[SoCo](https://github.com/SoCo/socos),
+[SoCo](https://github.com/SoCo/SoCo),
 but structured very differently.
 
 Right now, aiosonos is pre-release and barely functional.
