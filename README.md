@@ -1,6 +1,6 @@
-# aiosonos: asyncio-based Sonos client library
+# aiosonos: asyncio-based Sonos client library for  Python
 
-aiosonos is a client library for Sonos products
+aiosonos is a Python client library for Sonos products
 based on asyncio and aiohttp.
 It is derived from
 [SoCo](https://github.com/SoCo/SoCo),
