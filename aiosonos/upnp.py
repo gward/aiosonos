@@ -133,7 +133,6 @@ class UPnPClient:
         async with response:
             response_text = await response.text()
 
-        #log.debug('Received %s, %s', response.headers, response_text)
         status = response.status
         log.info('Received status %s', status)
         if status == 200:

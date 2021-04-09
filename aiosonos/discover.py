@@ -110,6 +110,7 @@ def discover_one_sync(
 
         now = time.monotonic()
 
+
 def _create_udp_socket() -> socket.socket:
     sock = socket.socket(
         socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -118,7 +119,6 @@ def _create_udp_socket() -> socket.socket:
         socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, struct.pack('B', 4))
     # Do not set interface address: just use the system default.
     return sock
-
 
 
 class DiscoveryProtocol:
@@ -188,8 +188,6 @@ async def discover_one():
     sock = _create_udp_socket()
     (transport, protocol) = await loop.create_datagram_endpoint(
         factory, sock=sock)
-    #player = await player_fut
-    #return player
     return await player_fut
 
 
