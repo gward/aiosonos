@@ -10,6 +10,7 @@ install_requires = [
 ]
 dev_requires = [
     'pyflakes',
+    'pycodestyle',
     'mypy',
 ]
 
