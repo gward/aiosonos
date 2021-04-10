@@ -28,6 +28,7 @@ async def main():
     print('all players:')
     for player in network.all_players:
         print('  ' + player.describe())
+    assert upnp._session is not None
     await upnp._session.close()
 
 
