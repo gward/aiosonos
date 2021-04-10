@@ -1,6 +1,6 @@
 #!/bin/sh
 
 set -e
-pyflakes aiosonos
-mypy aiosonos
-pycodestyle aiosonos
+pyflakes aiosonos examples
+mypy aiosonos examples
+pycodestyle aiosonos examples

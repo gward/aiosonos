@@ -6,9 +6,6 @@ import asyncio
 import logging
 import sys
 
-import aiohttp
-import aiosonos.discover
-
 from aiosonos import discover, api, upnp
 
 
