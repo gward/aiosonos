@@ -1,10 +1,23 @@
 import logging
 from xml.etree import ElementTree
-from typing import List
+from typing import Any, Dict, List
 
 from . import models, upnp
 
 log = logging.getLogger(__name__)
+
+
+def get_player(ip_address: str) -> models.Player:
+    '''Return a Player object for the given IP address.
+
+    Performs no I/O and does not validate that the IP address is actually
+    a Sonos player.
+
+    This function has singleton-like semantics: if a Player does not yet
+    exist for ``ip_address``, create and return one; for a given
+    ``ip_address``, always return the same object.
+    '''
+    return models.Player.get_instance(ip_address)
 
 
 async def get_group_state(player: models.Player) -> models.Network:
@@ -139,3 +152,106 @@ def _parse_group_state(groups_xml: str) -> models.Network:
         groups.append(models.Group(group_uuid, group_coordinator, members))
 
     return models.Network(groups, visible_players, all_players)
+
+
+async def get_current_track_info(player: models.Player) -> Dict[str, Any]:
+    '''Get information about the currently playing track.
+
+    Returns:
+        dict: A dictionary containing information about the currently
+        playing track: playlist_position, duration, title, artist, album,
+        position and an album_art link.
+
+    If we're unable to return data for a field, we'll return an empty
+    string. This can happen for all kinds of reasons so be sure to check
+    values. For example, a track may not have complete metadata and be
+    missing an album name. In this case track['album'] will be an empty
+    string.
+
+    .. note:: Calling this method on a slave in a group will not
+        return the track the group is playing, but the last track
+        this speaker was playing.
+    '''
+    client = upnp.get_upnp_client(player.ip_address)
+    result = await client.send_command(
+        upnp.SERVICE_AVTRANSPORT,
+        'GetPositionInfo',
+        [('InstanceID', 0), ('Channel', 'Master')]
+    )
+    log.debug('GetPositionInfo result: %r', result)
+    return _parse_track_info(result)
+
+
+def _parse_track_info(result: Dict[str, Any]) -> Dict[str, Any]:
+    track = {
+        'title': '',
+        'artist': '',
+        'album': '',
+        'album_art': '',
+        'position': '',
+    }
+    track['playlist_position'] = result['Track']
+    track['duration'] = result['TrackDuration']
+    track['uri'] = result['TrackURI']
+    track['position'] = result['RelTime']
+
+    metadata = result['TrackMetaData']
+    # Store the entire Metadata entry in the track, this can then be
+    # used if needed by the client to restart a given URI
+    track['metadata'] = metadata
+    # Duration seems to be '0:00:00' when listening to radio
+    if metadata != '' and track['duration'] == '0:00:00':
+        metadata = ElementTree.fromstring(metadata)
+        # Try parse trackinfo
+        trackinfo = (
+            metadata.findtext(
+                './/{urn:schemas-rinconnetworks-com:' 'metadata-1-0/}streamContent'
+            )
+            or ''
+        )
+        index = trackinfo.find(' - ')
+
+        if index > -1:
+            track['artist'] = trackinfo[:index]
+            track['title'] = trackinfo[index + 3:]
+        else:
+            # Might find some kind of title anyway in metadata
+            track['title'] = metadata.findtext(
+                './/{http://purl.org/dc/' 'elements/1.1/}title'
+            )
+            if not track['title']:
+                track['title'] = trackinfo
+
+    # If the speaker is playing from the line-in source, querying for track
+    # metadata will return 'NOT_IMPLEMENTED'.
+    elif metadata not in ('', 'NOT_IMPLEMENTED', None):
+        # Track metadata is returned in DIDL-Lite format
+        metadata = ElementTree.fromstring(metadata)
+        md_title = metadata.findtext('.//{http://purl.org/dc/elements/1.1/}title')
+        md_artist = metadata.findtext(
+            './/{http://purl.org/dc/elements/1.1/}creator'
+        )
+        md_album = metadata.findtext(
+            './/{urn:schemas-upnp-org:metadata-1-0/upnp/}album'
+        )
+
+        track['title'] = ''
+        if md_title:
+            track['title'] = md_title
+        track['artist'] = ''
+        if md_artist:
+            track['artist'] = md_artist
+        track['album'] = ''
+        if md_album:
+            track['album'] = md_album
+
+        album_art_url = metadata.findtext(
+            './/{urn:schemas-upnp-org:metadata-1-0/upnp/}albumArtURI'
+        )
+        if album_art_url is not None:
+            # track['album_art'] = self.music_library.build_album_art_full_uri(
+            #     album_art_url
+            # )
+            pass
+
+    return track

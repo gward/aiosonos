@@ -69,7 +69,46 @@ class ZoneGroupTopology(UPnPService):
     pass
 
 
+class AVTransport(UPnPService):
+    '''UPnP standard AV Transport service, for functions relating to transport
+    management, eg play, stop, seek, playlists etc.'''
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.control_url = 'MediaRenderer/AVTransport/Control'
+        self.event_subscription_url = 'MediaRenderer/AVTransport/Event'
+
+        # For error codes, see
+        # http://upnp.org/specs/av/UPnP-av-AVTransport-v1-Service.pdf
+        self.upnp_errors.update(
+            {
+                701: 'Transition not available',
+                702: 'No contents',
+                703: 'Read error',
+                704: 'Format not supported for playback',
+                705: 'Transport is locked',
+                706: 'Write error',
+                707: 'Media is protected or not writeable',
+                708: 'Format not supported for recording',
+                709: 'Media is full',
+                710: 'Seek mode not supported',
+                711: 'Illegal seek target',
+                712: 'Play mode not supported',
+                713: 'Record quality not supported',
+                714: 'Illegal MIME-Type',
+                715: 'Content "BUSY"',
+                716: 'Resource Not found',
+                717: 'Play speed not supported',
+                718: 'Invalid InstanceID',
+                737: 'No DNS Server',
+                738: 'Bad Domain Name',
+                739: 'Server Error',
+            }
+        )
+
+
 SERVICE_TOPOLOGY = ZoneGroupTopology()
+SERVICE_AVTRANSPORT = AVTransport()
 
 
 class UPnPClient:
@@ -119,8 +158,6 @@ class UPnPClient:
             `UnknownSoCoException`: if an unknonwn UPnP error occurs.
 
         '''
-        assert args is None, 'args not supported yet'
-
         headers, body = self.build_command(service, action, args)
         url = self.base_url + service.control_url
         log.info('Sending %s %s to %s', action, args, url)
