@@ -1,9 +1,12 @@
 import asyncio
+import asyncio.protocols
+import asyncio.transports
 import logging
 import re
 import socket
 import struct
 import sys
+from typing import Optional, Tuple
 
 from . import models
 
@@ -32,7 +35,8 @@ def _create_udp_socket() -> socket.socket:
     return sock
 
 
-class DiscoveryProtocol:
+class DiscoveryProtocol(asyncio.protocols.BaseProtocol):
+    """implements asyncio.protcols.DatagramProtocol interface"""
     server_re = re.compile(
         rb'^server:.*\bsonos/', re.IGNORECASE | re.MULTILINE)
 
@@ -47,13 +51,13 @@ class DiscoveryProtocol:
         self.multicast_port = multicast_port
         self.player_fut = player_fut
 
-    def connection_made(self, transport):
+    def connection_made(self, transport: asyncio.transports.DatagramTransport) -> None:  # type: ignore # mypy wants BaseTransport # nopep8
         log.debug('DiscoveryProtocol: connection_made, transport=%r', transport)
         self.transport = transport
         self.transport.sendto(
             self.data, (self.multicast_group, self.multicast_port))
 
-    def datagram_received(self, data, addr):
+    def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         # Only Zone Players should respond, given the value of ST in the
         # PLAYER_SEARCH message. However, to prevent misbehaved devices
         # on the network disrupting the discovery process, we check that
@@ -79,15 +83,15 @@ class DiscoveryProtocol:
             self.player_fut.set_result(models.Player(addr[0]))
             self.transport.close()
 
-    def connection_lost(lost, self):
-        log.debug("DiscoveryProtocol: connection lost")
+    def connection_lost(self, exc: Optional[Exception]) -> None:
+        log.debug("DiscoveryProtocol: connection lost: %r", exc)
 
 
-async def discover_one():
+async def discover_one() -> models.Player:
     loop = asyncio.get_event_loop()     # switch to get_running_loop in 3.7
     player_fut = loop.create_future()
 
-    def factory():
+    def factory() -> asyncio.protocols.BaseProtocol:
         return DiscoveryProtocol(
             PLAYER_SEARCH,
             MULTICAST_GROUP,

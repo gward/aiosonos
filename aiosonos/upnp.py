@@ -1,7 +1,7 @@
 import logging
 from xml.sax import saxutils
 from xml.etree import ElementTree
-from typing import Optional, Any, Dict, List, Tuple
+from typing import Optional, NoReturn, Any, Dict, List, Tuple
 
 import aiohttp.client
 
@@ -20,7 +20,7 @@ class UPnPService:
     scpd_url: str
     event_subscription_url: str
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.service_type = self.__class__.__name__
         self.version = 1
 
@@ -213,7 +213,11 @@ class UPnPClient:
         # is set over the network
         return (headers, body)
 
-    def raise_upnp_error(self, service: UPnPService, url: str, xml_error: str):
+    def raise_upnp_error(
+            self,
+            service: UPnPService,
+            url: str,
+            xml_error: str) -> NoReturn:
         """Dissect a UPnP error, and raise an appropriate exception.
 
         Args:
@@ -270,7 +274,7 @@ class UPnPClient:
         raise errors.SonosError(xml_error)
 
     @staticmethod
-    def wrap_arguments(args=None):
+    def wrap_arguments(args: List[Tuple[str, str]] = None) -> str:
         """Wrap a list of tuples in xml ready to pass into a SOAP request.
 
         Args:

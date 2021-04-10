@@ -73,7 +73,7 @@ def _parse_group_state(groups_xml: str) -> models.Network:
     visible_players = list()
     all_players = list()
 
-    def parse_member(member_element) -> models.Player:
+    def parse_member(member_element: ElementTree.Element) -> models.Player:
         """Parse a ZoneGroupMember or Satellite element from Zone Group
         State, create a SoCo instance for the member, set basic attributes
         and return it."""

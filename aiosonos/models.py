@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, ClassVar, Dict, Set, List
+from typing import Optional, ClassVar, Dict, List
 
 log = logging.getLogger(__name__)
 
@@ -27,17 +27,17 @@ class Player:
         self.is_coordinator = None
         self.is_bridge = None
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.uuid is None:
             return self.ip_address
         else:
             return '{}/{}'.format(self.ip_address, self.uuid)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{} at {:x}: {}>'.format(
             self.__class__.__name__, id(self), self)
 
-    def describe(self):
+    def describe(self) -> str:
         return '{}: {}{}'.format(
             self,
             self.name,
@@ -59,20 +59,24 @@ class Group:
         self.coordinator = coordinator
         self.members = members
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.uuid
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{} at {:x}: {}>'.format(
             self.__class__.__name__, id(self), self)
 
 
 class Network:                  # or is this a household?
-    groups: Set[Group]
-    visible_players: Set[Player]
-    all_players: Set[Player]
+    groups: List[Group]
+    visible_players: List[Player]
+    all_players: List[Player]
 
-    def __init__(self, groups, visible_players, all_players):
+    def __init__(
+            self,
+            groups: List[Group],
+            visible_players: List[Player],
+            all_players: List[Player]):
         self.groups = groups
         self.visible_players = visible_players
         self.all_players = all_players

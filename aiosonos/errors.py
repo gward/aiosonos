@@ -9,7 +9,12 @@ class SonosUPnPError(SonosError):
     """A UPnP Fault Code, raised in response to actions sent over the
     network.
     """
-    def __init__(self, url, error_code, error_xml, error_description=""):
+    def __init__(
+            self,
+            url: str,
+            error_code: str,
+            error_xml: str,
+            error_description: str = ""):
         """
         Args:
             message (str): The message from the server.
@@ -25,5 +30,5 @@ class SonosUPnPError(SonosError):
         self.message = "UPnP Error {} received: {} from {}".format(
             error_code, error_description, url)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.message

@@ -9,7 +9,7 @@ import sys
 from aiosonos import discover, api, upnp
 
 
-async def main():
+async def main() -> None:
     logging.basicConfig(
         format='[%(asctime)s %(levelname)-1.1s %(name)s] %(message)s',
         level=logging.DEBUG,
