@@ -1,3 +1,14 @@
+'''The public interface to aiosonos.
+
+If it's in this module, you should assume the interface is reasonably stable
+and won't break after aiosonos 1.0 is released. Otherwise, all bets are off.
+You can call code in other modules, but it might break.
+
+Also, nothing else in aiosonos is allowed to depend on this module. If you
+are writing code that will be used elsewhere in aiosonos, this is the wrong
+place.
+'''
+
 import logging
 from xml.etree import ElementTree
 from typing import Any, Dict, List

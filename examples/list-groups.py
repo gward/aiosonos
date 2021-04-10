@@ -6,7 +6,7 @@ import asyncio
 import logging
 import sys
 
-from aiosonos import discover, api, upnp
+from aiosonos import discover, sonos, upnp
 
 
 async def main() -> None:
@@ -16,7 +16,7 @@ async def main() -> None:
         stream=sys.stdout)
     player = await discover.discover_one()
     print(repr(player))
-    network = await api.get_group_state(player)
+    network = await sonos.get_group_state(player)
     print('groups:')
     for group in network.groups:
         print('  {}'.format(group))

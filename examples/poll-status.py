@@ -6,7 +6,7 @@ import logging
 import sys
 import time
 
-from aiosonos import api
+from aiosonos import sonos
 
 
 async def main() -> None:
@@ -19,10 +19,10 @@ async def main() -> None:
     parser.add_argument('player')
     args = parser.parse_args()
 
-    player = api.get_player(args.player)
+    player = sonos.get_player(args.player)
     old_position = ''
     while True:
-        track = await api.get_current_track_info(player)
+        track = await sonos.get_current_track_info(player)
         now = time.time()
         print('{now:.3f} {artist}: {title}  {position}/{duration} (was {old_position})'
               .format(now=now,
