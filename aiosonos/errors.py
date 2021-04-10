@@ -1,6 +1,3 @@
-from __future__ import annotations
-
-
 class SonosError(Exception):
     '''Raised if there is any problem communicating with the Sonos network,
     or if we receive an error from a Sonos player.

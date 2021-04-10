@@ -34,4 +34,5 @@ async def main():
     await upnp._session.close()
 
 
-asyncio.run(main())
+# with Python 3.7, we could use asyncio.run() here
+asyncio.get_event_loop().run_until_complete(main())

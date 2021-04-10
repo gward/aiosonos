@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 from typing import Optional, ClassVar, Dict, Set, List
 
@@ -8,7 +6,7 @@ log = logging.getLogger(__name__)
 
 class Player:
     # group_state_ttl: ClassVar[float] = 5.0
-    _instances: ClassVar[Dict[str, Player]] = {}
+    _instances: ClassVar[Dict[str, 'Player']] = {}
 
     ip_address: str
     uuid: Optional[str]
@@ -20,7 +18,7 @@ class Player:
     # _group_state_update: float
 
     @classmethod
-    def get_instance(cls, ip_address: str) -> Player:
+    def get_instance(cls, ip_address: str) -> 'Player':
         player = cls._instances.get(ip_address)
         if player is None:
             player = cls._instances[ip_address] = cls(ip_address)

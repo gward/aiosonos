@@ -1,7 +1,3 @@
-'''discover Sonos players on the local network using UPnP (UDP multicast)'''
-
-from __future__ import annotations
-
 import asyncio
 import logging
 import re
@@ -173,7 +169,7 @@ class DiscoveryProtocol:
 
 
 async def discover_one():
-    loop = asyncio.get_running_loop()
+    loop = asyncio.get_event_loop()     # switch to get_running_loop in 3.7
     player_fut = loop.create_future()
 
     def factory():
@@ -200,6 +196,7 @@ if __name__ == '__main__':
         stream=sys.stdout,
     )
     if use_asyncio:
-        asyncio.run(discover_one())
+        result = asyncio.get_event_loop().run_until_complete(discover_one())
+        print(repr(result))
     else:
         print("discover_one() returned:", discover_one())

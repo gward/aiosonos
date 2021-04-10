@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 from xml.sax import saxutils
 from xml.etree import ElementTree
