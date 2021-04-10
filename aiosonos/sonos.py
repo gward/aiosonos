@@ -13,9 +13,19 @@ import logging
 from xml.etree import ElementTree
 from typing import Any, Dict, List
 
-from . import models, upnp
+from . import models, upnp, discover
 
 log = logging.getLogger(__name__)
+
+
+async def discover_one() -> models.Player:
+    '''Discover the local Sonos network and return one arbitrary Player.
+
+    Send a UPnP discovery packet and wait for responses to arrive. As soon
+    as one arrives, construct a Player object based on that response and
+    return it. Ignore any further responses.
+    '''
+    return await discover.discover_one()
 
 
 def get_player(ip_address: str) -> models.Player:
