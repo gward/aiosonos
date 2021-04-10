@@ -6,7 +6,7 @@ import asyncio
 import logging
 import sys
 
-from aiosonos import sonos, upnp
+from aiosonos import sonos
 
 
 async def main() -> None:
@@ -28,8 +28,7 @@ async def main() -> None:
     print('all players:')
     for player in network.all_players:
         print('  ' + player.describe())
-    assert upnp._session is not None
-    await upnp._session.close()
+    await sonos.close()
 
 
 # with Python 3.7, we could use asyncio.run() here

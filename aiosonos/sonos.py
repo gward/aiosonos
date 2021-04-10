@@ -276,3 +276,8 @@ def _parse_track_info(result: Dict[str, Any]) -> Dict[str, Any]:
             pass
 
     return track
+
+
+async def close() -> None:
+    '''Release any resources held by this library.'''
+    await upnp.close()

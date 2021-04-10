@@ -408,3 +408,11 @@ def get_upnp_client(ip_address: str) -> UPnPClient:
 
     base_url = 'http://{}:1400/'.format(ip_address)
     return UPnPClient(base_url, _session)
+
+
+async def close() -> None:
+    '''Release any resources held by this module.'''
+    global _session
+    if _session is not None:
+        await _session.close()
+        _session = None
