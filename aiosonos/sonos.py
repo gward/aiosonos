@@ -278,6 +278,34 @@ def _parse_track_info(result: Dict[str, Any]) -> Dict[str, Any]:
     return track
 
 
+async def get_transport_info(player: models.Player) -> Dict[str, Any]:
+    '''Get the current playback state.
+
+    Returns:
+        dict: The following information about the
+        speaker's playing state:
+
+        *   state (``PLAYING``, ``TRANSITIONING``, ``PAUSED_PLAYBACK``, ``STOPPED``)
+        *   status (OK, ?)
+        *   speed(1, ?)
+
+    This allows us to know if speaker is playing or not. Other values for
+    status and speed are unknown.
+    '''
+    client = upnp.get_upnp_client(player.ip_address)
+    result = await client.send_command(
+        upnp.SERVICE_AVTRANSPORT,
+        'GetTransportInfo',
+        [('InstanceID', 0)],
+    )
+
+    return {
+        'state': result['CurrentTransportState'],
+        'status': result['CurrentTransportStatus'],
+        'speed': result['CurrentSpeed'],
+    }
+
+
 async def close() -> None:
     '''Release any resources held by this library.'''
     await upnp.close()

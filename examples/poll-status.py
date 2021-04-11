@@ -23,10 +23,15 @@ async def main() -> None:
     old_position = ''
     while True:
         track = await sonos.get_current_track_info(player)
+        transport = await sonos.get_transport_info(player)
         now = time.time()
-        print('{now:.3f} {artist}: {title}  {position}/{duration} (was {old_position})'
+        print('{now:.3f} '
+              '{artist}: {title}  '
+              '{position}/{duration} (was {old_position}) '
+              '{state}'
               .format(now=now,
                       old_position=old_position,
+                      state=transport['state'],
                       **track),
               end='\r')
 
