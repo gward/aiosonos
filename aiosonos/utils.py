@@ -1,3 +1,12 @@
+import asyncio
+
+
+try:
+    get_event_loop = asyncio.get_running_loop     # type: ignore  # Python 3.7+
+except AttributeError:
+    get_event_loop = asyncio.get_event_loop
+
+
 def prettify(xml_text: str) -> str:
     '''Return a pretty-printed version of a unicode XML string.
 

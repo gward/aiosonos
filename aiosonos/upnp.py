@@ -5,7 +5,7 @@ from typing import Optional, NoReturn, Any, Dict, List, Tuple
 
 import aiohttp.client
 
-from . import utils, errors
+from . import utils, errors, models
 
 log = logging.getLogger(__name__)
 
@@ -401,13 +401,15 @@ class UPnPClient:
 _session = None
 
 
-def get_upnp_client(ip_address: str) -> UPnPClient:
+def get_session() -> aiohttp.client.ClientSession:
     global _session
     if _session is None:
         _session = aiohttp.ClientSession()
+    return _session
 
-    base_url = 'http://{}:1400/'.format(ip_address)
-    return UPnPClient(base_url, _session)
+
+def get_upnp_client(player: models.Player) -> UPnPClient:
+    return UPnPClient(player.base_url, get_session())
 
 
 async def close() -> None:

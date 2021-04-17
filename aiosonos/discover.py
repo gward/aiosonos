@@ -8,7 +8,7 @@ import struct
 import sys
 from typing import Optional, Tuple
 
-from . import models
+from . import models, utils
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +27,9 @@ MULTICAST_PORT = 1900
 
 def _create_udp_socket() -> socket.socket:
     sock = socket.socket(
-        socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        socket.AF_INET,
+        socket.SOCK_DGRAM | socket.SOCK_NONBLOCK,
+        socket.IPPROTO_UDP)
     # UPnP v1.0 requires a TTL of 4
     sock.setsockopt(
         socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, struct.pack('B', 4))
@@ -88,7 +90,7 @@ class DiscoveryProtocol(asyncio.protocols.BaseProtocol):
 
 
 async def discover_one() -> models.Player:
-    loop = asyncio.get_event_loop()     # switch to get_running_loop in 3.7
+    loop = utils.get_event_loop()
     player_fut = loop.create_future()
 
     def factory() -> asyncio.protocols.BaseProtocol:

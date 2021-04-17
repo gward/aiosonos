@@ -8,6 +8,7 @@ class Player:
     _instances: ClassVar[Dict[str, 'Player']] = {}
 
     ip_address: str
+    base_url: str
     uuid: Optional[str]
     name: Optional[str]
     is_coordinator: Optional[bool]
@@ -22,6 +23,7 @@ class Player:
 
     def __init__(self, ip_address: str):
         self.ip_address = ip_address
+        self.base_url = 'http://{}:1400/'.format(self.ip_address)
         self.uuid = None
         self.name = None
         self.is_coordinator = None

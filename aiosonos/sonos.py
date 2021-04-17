@@ -13,7 +13,7 @@ import logging
 from xml.etree import ElementTree
 from typing import Any, Dict, List
 
-from . import models, upnp, discover
+from . import models, upnp, discover, event
 
 log = logging.getLogger(__name__)
 
@@ -49,10 +49,7 @@ async def get_group_state(player: models.Player) -> models.Network:
     #         now - self._group_state_update <= self.group_state_ttl):
     #     return
 
-    # if self._upnp_client is None:
-    #     self._upnp_client = upnp.get_upnp_client(self.ip_address)
-
-    client = upnp.get_upnp_client(player.ip_address)
+    client = upnp.get_upnp_client(player)
     result = await client.send_command(
         upnp.SERVICE_TOPOLOGY,
         'GetZoneGroupState')
@@ -193,7 +190,7 @@ async def get_current_track_info(player: models.Player) -> Dict[str, Any]:
         return the track the group is playing, but the last track
         this speaker was playing.
     '''
-    client = upnp.get_upnp_client(player.ip_address)
+    client = upnp.get_upnp_client(player)
     result = await client.send_command(
         upnp.SERVICE_AVTRANSPORT,
         'GetPositionInfo',
@@ -292,7 +289,7 @@ async def get_transport_info(player: models.Player) -> Dict[str, Any]:
     This allows us to know if speaker is playing or not. Other values for
     status and speed are unknown.
     '''
-    client = upnp.get_upnp_client(player.ip_address)
+    client = upnp.get_upnp_client(player)
     result = await client.send_command(
         upnp.SERVICE_AVTRANSPORT,
         'GetTransportInfo',
@@ -304,6 +301,15 @@ async def get_transport_info(player: models.Player) -> Dict[str, Any]:
         'status': result['CurrentTransportStatus'],
         'speed': result['CurrentSpeed'],
     }
+
+
+async def subscribe(
+        player: models.Player,
+        service: upnp.UPnPService,
+        callback: event.EventCB) -> event.Subscription:
+    sub = event.Subscription(upnp.get_session(), player, service, callback)
+    await sub.subscribe()
+    return sub
 
 
 async def close() -> None:
