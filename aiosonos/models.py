@@ -4,6 +4,10 @@ from typing import Optional, ClassVar, Dict, List
 log = logging.getLogger(__name__)
 
 
+def stdrepr(self):
+    return '<{} at {:x}: {}>'.format(self.__class__.__name__, id(self), self)
+
+
 class Player:
     _instances: ClassVar[Dict[str, 'Player']] = {}
 
@@ -35,9 +39,7 @@ class Player:
         else:
             return '{}/{}'.format(self.ip_address, self.uuid)
 
-    def __repr__(self) -> str:
-        return '<{} at {:x}: {}>'.format(
-            self.__class__.__name__, id(self), self)
+    __repr__ = stdrepr
 
     def describe(self) -> str:
         return '{}: {}{}'.format(
@@ -64,9 +66,7 @@ class Group:
     def __str__(self) -> str:
         return self.uuid
 
-    def __repr__(self) -> str:
-        return '<{} at {:x}: {}>'.format(
-            self.__class__.__name__, id(self), self)
+    __repr__ = stdrepr
 
 
 class Network:                  # or is this a household?

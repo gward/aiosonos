@@ -2,13 +2,14 @@ import asyncio
 import logging
 import socket
 import time
-from typing import Optional, ClassVar, Callable, Dict
+from typing import Optional, Any, ClassVar, Callable, Dict, Tuple
 
 import aiohttp
 import aiohttp.client
 from aiohttp import web
+import multidict
 
-from . import errors, models, upnp, utils
+from . import errors, models, parsers, upnp, utils
 
 log = logging.getLogger(__name__)
 
@@ -16,11 +17,38 @@ log = logging.getLogger(__name__)
 EventCB = Callable[['Event'], None]
 
 
+class Event:
+    service: upnp.UPnPService
+    sid: str
+    seq: int
+    properties: Dict[str, Any]
+
+    def __init__(
+            self,
+            service: upnp.UPnPService,
+            sid: str,
+            seq: int,
+            properties: Dict[str, Any]):
+        self.service = service
+        self.sid = sid
+        self.seq = seq
+        self.properties = properties
+
+    def __str__(self):
+        return '{service} {sid} #{seq}'.format(**vars(self))
+
+    __repr__ = models.stdrepr
+
+
 class Subscription:
     '''Represents one subscription to one service with one callback.'''
 
     # map from sid to Subscription in state 1, so we can cleanup
     _instances: ClassVar[Dict[str, 'Subscription']] = {}
+
+    @classmethod
+    def get_instance(cls, sid: str) -> Optional['Subscription']:
+        return cls._instances.get(sid)
 
     def __init__(
             self,
@@ -130,6 +158,10 @@ class Subscription:
 
         return response
 
+    def handle_event(self, event: Event):
+        log.info('Subscription %s: received event %r', self.sid, event)
+        self.callback(event)
+
 
 class EventServer:
     '''HTTP server to handle callbacks from Sonos players'''
@@ -166,6 +198,17 @@ class EventServer:
         return self.url
 
     async def handle(self, request: web.BaseRequest) -> web.StreamResponse:
+        '''Receive an HTTP NOTIFY request and emit an Event object.
+
+        Also returns an HTTP response, but that's only visible to the Sonos
+        player that sent the request, so not terribly important. What is
+        important is parsing the request to create an Event object, which
+        is then passed to the handle_event() method of the Subscription
+        that caused this NOTIFY request to be sent. The Subscription is
+        responsible for further processing, most importantly invoking the
+        appropriate callback.
+        '''
+
         # events on ZoneGroupTopology service look like
         # <e:propertyset xmlns:e="urn:schemas-upnp-org:event-1-0">
         #   <e:property>
@@ -188,9 +231,33 @@ class EventServer:
 
         log.info('EventServer: received %s %s (path %s) headers:\n%s',
                  request.method, request.url, request.path, request.headers)
-        content = await request.content.read()
-        log.debug('request body:\n%s', content)
+        body = await request.content.read()
+        # log.debug('request body:\n%s', body)
+
+        if (request.method == 'NOTIFY' and
+                request.headers['content-type'] == 'text/xml'):
+            (subscription, event) = self.parse_event(request.headers, body)
+            if subscription is not None and event is not None:
+                subscription.handle_event(event)
+
         return web.Response(text='')
+
+    def parse_event(
+            self,
+            headers: 'multidict.CIMultiDictProxy[str]',
+            body: bytes) -> Tuple[Optional[Subscription], Optional[Event]]:
+        import pprint
+        sid = headers['sid']       # event subscription id
+        seq = int(headers['seq'])  # event sequence number
+        subscription = Subscription.get_instance(sid)
+        if subscription is None:
+            log.warning('received event for unknown subscription: %s', sid)
+            return (None, None)
+
+        properties = parsers.parse_event_body(body)
+        log.debug('parse_event_body returned properties:\n%s',
+                  pprint.pformat(properties, indent=2, width=120))
+        return (subscription, Event(subscription.service, sid, seq, properties))
 
 
 async def _get_local_addr(
@@ -212,8 +279,3 @@ def get_event_server() -> EventServer:
     if _server is None:
         _server = EventServer()
     return _server
-
-
-class Event:
-    def __init__(self) -> None:
-        pass

@@ -24,3 +24,32 @@ def prettify(xml_text: str) -> str:
 
     reparsed = xml.dom.minidom.parseString(xml_text)
     return reparsed.toprettyxml(indent='  ', newl='\n')
+
+
+#: Commonly used namespaces, and abbreviations, used by `ns_tag`.
+NAMESPACES = {
+    'dc': 'http://purl.org/dc/elements/1.1/',
+    'upnp': 'urn:schemas-upnp-org:metadata-1-0/upnp/',
+    '': 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/',
+    'ms': 'http://www.sonos.com/Services/1.1',
+    'r': 'urn:schemas-rinconnetworks-com:metadata-1-0/',
+}
+
+
+def ns_tag(ns_id, tag):
+    '''Return a namespace/tag item.
+
+    Args:
+        ns_id (str): A namespace id, eg ``"dc"`` (see `NAMESPACES`)
+        tag (str): An XML tag, eg ``"author"``
+
+    Returns:
+        str: A fully qualified tag.
+
+    The ns_id is translated to a full name space via the :const:`NAMESPACES`
+    constant::
+
+        >>> xml.ns_tag('dc','author')
+        '{http://purl.org/dc/elements/1.1/}author'
+    '''
+    return '{{{}}}{}'.format(NAMESPACES[ns_id], tag)

@@ -32,3 +32,10 @@ class SonosUPnPError(SonosError):
 
     def __str__(self) -> str:
         return self.message
+
+
+class DIDLMetadataError(SonosError):
+    '''Raised if a data container class cannot create the DIDL metadata due to
+    missing information.
+    '''
+    pass

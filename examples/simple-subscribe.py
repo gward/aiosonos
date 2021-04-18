@@ -22,11 +22,12 @@ async def main() -> None:
     player = sonos.get_player(args.player)
 
     def handle(event: event.Event) -> None:
-        log.info(repr(event))
+        log.info('received event: %r with %d properties: %s',
+                 event, len(event.properties), ', '.join(event.properties))
 
     log.debug('subscribing...')
     await sonos.subscribe(player, upnp.SERVICE_TOPOLOGY, handle)
-    # await sonos.subscribe(player, upnp.SERVICE_AVTRANSPORT, handle)
+    await sonos.subscribe(player, upnp.SERVICE_AVTRANSPORT, handle)
     log.debug('back from sonos.subscribe(): looping forever...')
 
     forever = asyncio.get_event_loop().create_future()

@@ -62,6 +62,9 @@ class UPnPService:
             612: "No Such Session",
         }
 
+    def __str__(self):
+        return self.service_type
+
 
 class ZoneGroupTopology(UPnPService):
     """Sonos zone group topology service, for functions relating to network
