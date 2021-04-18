@@ -82,3 +82,8 @@ class Network:                  # or is this a household?
         self.groups = groups
         self.visible_players = visible_players
         self.all_players = all_players
+
+    def __str__(self) -> str:
+        return '{} groups, {} players'.format(len(self.groups), len(self.all_players))
+
+    __repr__ = stdrepr
