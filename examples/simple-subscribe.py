@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import logging
+import signal
 import sys
 
 from aiosonos import sonos, upnp, event
@@ -10,12 +11,7 @@ from aiosonos import sonos, upnp, event
 log = logging.getLogger(__name__)
 
 
-async def main() -> None:
-    logging.basicConfig(
-        format='[%(asctime)s %(levelname)-1.1s %(name)s] %(message)s',
-        level=logging.DEBUG,
-        stream=sys.stdout)
-
+async def simple_subscribe(done_fut) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('player')
     args = parser.parse_args()
@@ -28,11 +24,35 @@ async def main() -> None:
     log.debug('subscribing...')
     await sonos.subscribe(player, upnp.SERVICE_TOPOLOGY, handle)
     await sonos.subscribe(player, upnp.SERVICE_AVTRANSPORT, handle)
-    log.debug('back from sonos.subscribe(): looping forever...')
+    log.debug('back from sonos.subscribe(): looping until done...')
 
-    forever = asyncio.get_event_loop().create_future()
-    return await forever
+    await done_fut
 
 
-# with Python 3.7, we could use asyncio.run() here
-asyncio.get_event_loop().run_until_complete(main())
+async def interrupted(loop, done_fut):
+    print('start cleanup')
+    try:
+        await sonos.close()
+    except Exception:
+        log.exception('error closing aiosonos library')
+    done_fut.set_result(True)
+    loop.call_soon(loop.stop)
+    print('done cleanup: will stop soon')
+
+
+def main() -> None:
+    logging.basicConfig(
+        format='[%(asctime)s %(levelname)-1.1s %(name)s] %(message)s',
+        level=logging.DEBUG,
+        stream=sys.stdout)
+
+    loop = asyncio.get_event_loop()
+    print('loop =', loop)
+    done_fut = loop.create_future()
+    loop.add_signal_handler(
+        signal.SIGINT, lambda: asyncio.ensure_future(interrupted(loop, done_fut)))
+    # with Python 3.7, we could use asyncio.run() here
+    loop.run_until_complete(simple_subscribe(done_fut))
+
+
+main()

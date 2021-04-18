@@ -50,6 +50,11 @@ class Subscription:
     def get_instance(cls, sid: str) -> Optional['Subscription']:
         return cls._instances.get(sid)
 
+    @classmethod
+    async def unsubscribe_all(cls) -> None:
+        for sub in list(cls._instances.values()):
+            await sub.unsubscribe()
+
     def __init__(
             self,
             session: aiohttp.client.ClientSession,
@@ -96,11 +101,13 @@ class Subscription:
             "NT": "upnp:event",
         }
 
-        response = await self._request(
+        response = await self.session.request(
             "SUBSCRIBE",
             base_url + service.event_subscription_url,
-            req_headers,
+            headers=req_headers,
+            timeout=3.0,
         )
+        response.raise_for_status()
 
         headers = response.headers
         self.sid = headers["sid"]
@@ -133,30 +140,32 @@ class Subscription:
         # interval = self.timeout * 85 / 100
         # self._auto_renew_start(interval)
 
+    async def unsubscribe(self) -> None:
+        if self.state != 1:
+            log.info('Nothing to unsubscribe')
+            return
+
+        req_headers = {
+            "SID": self.sid,
+        }
+        response = await self.session.request(
+            "UNSUBSCRIBE",
+            self.player.base_url + self.service.event_subscription_url,
+            headers=req_headers,
+            timeout=1.0,
+        )
+        log.info('Unsubscribe response: %r', response)
+        if response.status == 200:
+            self.state = 2
+            del self._instances[self.sid]
+
     async def _request(
             self,
             method: str,
             url: str,
             headers: Dict[str, str]) -> aiohttp.ClientResponse:
-        unsubscribing = (method == 'UNSUBSCRIBING')
-        try:
-            response = await self.session.request(
-                method, url, headers=headers, timeout=3.0)
-        except aiohttp.ClientError:
-            # Ignore timeout for unsubscribe since we are leaving anyway.
-            if not unsubscribing:
-                raise
-
-        log.debug('received response: %r; headers:\n%s',
-                  response, response.headers)
-
-        # Ignore "412 Client Error: Precondition Failed for url:" from
-        # rebooted speakers. The reboot will have unsubscribed us which is
-        # what we are trying to do.
-        if not (unsubscribing and response.status == 412):
-            response.raise_for_status()
-
-        return response
+        return await self.session.request(
+            method, url, headers=headers, timeout=3.0)
 
     def handle_event(self, event: Event):
         log.info('Subscription %s: received event %r', self.sid, event)

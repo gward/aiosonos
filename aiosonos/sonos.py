@@ -199,4 +199,5 @@ async def subscribe(
 
 async def close() -> None:
     '''Release any resources held by this library.'''
+    await event.Subscription.unsubscribe_all()
     await upnp.close()
