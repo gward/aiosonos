@@ -47,7 +47,6 @@ def main() -> None:
         stream=sys.stdout)
 
     loop = asyncio.get_event_loop()
-    print('loop =', loop)
     done_fut = loop.create_future()
     loop.add_signal_handler(
         signal.SIGINT, lambda: asyncio.ensure_future(interrupted(loop, done_fut)))

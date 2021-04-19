@@ -256,9 +256,4 @@ def parse_didl(didl_xml: str) -> List[didl.DIDLObject]:
             # causes problems.
             raise errors.DIDLMetadataError(
                 'Illegal child of DIDL element: <%s>' % elt.tag)
-    log.debug(
-        'Created data structures: %.20s (CUT) from DIDL string "%.20s" (CUT)',
-        items,
-        didl_xml,
-    )
     return items

@@ -54,7 +54,6 @@ class DiscoveryProtocol(asyncio.protocols.BaseProtocol):
         self.player_fut = player_fut
 
     def connection_made(self, transport: asyncio.transports.DatagramTransport) -> None:  # type: ignore # mypy wants BaseTransport # nopep8
-        log.debug('DiscoveryProtocol: connection_made, transport=%r', transport)
         self.transport = transport
         self.transport.sendto(
             self.data, (self.multicast_group, self.multicast_port))
@@ -79,14 +78,13 @@ class DiscoveryProtocol(asyncio.protocols.BaseProtocol):
         # X-RINCON-BOOTSEQ: 3
         # X-RINCON-HOUSEHOLD: Sonos_7O********************R7eU
 
-        log.debug('DiscoveryProtocol: datagram received from addr %s:\n%s',
-                  addr, data.decode())
+        log.debug('DiscoveryProtocol: datagram received from addr %s', addr)
         if self.server_re.search(data):
             self.player_fut.set_result(models.Player(addr[0]))
             self.transport.close()
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
-        log.debug("DiscoveryProtocol: connection lost: %r", exc)
+        log.debug("DiscoveryProtocol: connection lost: exc=%r", exc)
 
 
 async def discover_one() -> models.Player:

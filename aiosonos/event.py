@@ -79,9 +79,6 @@ class Subscription:
 
         auto_renew = False      # for now
 
-        service = self.service
-        base_url = self.player.base_url
-
         # Make sure we have a running EventServer (HTTP server that can
         # accept callback requests from the Sonos player)
         event_server = get_event_server()
@@ -95,15 +92,15 @@ class Subscription:
         # TIMEOUT: Second-requested subscription duration (optional)
 
         callback_url = event_server.get_url()
-        log.debug('event server running; callback url = %s', callback_url)
         req_headers = {
             "Callback": "<{}>".format(callback_url),
             "NT": "upnp:event",
         }
 
+        subscribe_url = self.player.base_url + self.service.event_subscription_url
         response = await self.session.request(
             "SUBSCRIBE",
-            base_url + service.event_subscription_url,
+            subscribe_url,
             headers=req_headers,
             timeout=3.0,
         )
@@ -126,9 +123,9 @@ class Subscription:
             self.timeout = int(timeout.lstrip("Second-"))
         self.timestamp = time.time()
         self.state = 1
-        log.info(
+        log.debug(
             "Subscribed to %s: sid=%s, timeout=%d",
-            base_url + service.event_subscription_url,
+            subscribe_url,
             self.sid,
             self.timeout,
         )
@@ -193,15 +190,13 @@ class EventServer:
         site = web.TCPSite(self.runner, ip_addr, 0)
         await site.start()
 
-        log.info('EventServer: ready for HTTP requests: site.name = %s',
-                 site.name)
-
         # ugh: need to look at private attr site._server to determine the
         # real port that the kernel selected
         assert site._server is not None
         assert site._server.sockets is not None
         (addr, port) = site._server.sockets[0].getsockname()
         self.url = 'http://{}:{}/'.format(addr, port)
+        log.info('EventServer: ready for HTTP requests: url = %s', self.url)
 
     def get_url(self) -> str:
         return self.url
@@ -238,10 +233,9 @@ class EventServer:
         #   </e:property>
         # </e:propertyset>
 
-        log.info('EventServer: received %s %s (path %s) headers:\n%s',
-                 request.method, request.url, request.path, request.headers)
+        log.debug('EventServer: received %s %s from %s',
+                  request.method, request.path, request.remote)
         body = await request.content.read()
-        # log.debug('request body:\n%s', body)
 
         if (request.method == 'NOTIFY' and
                 request.headers['content-type'] == 'text/xml'):
@@ -255,7 +249,7 @@ class EventServer:
             self,
             headers: 'multidict.CIMultiDictProxy[str]',
             body: bytes) -> Tuple[Optional[Subscription], Optional[Event]]:
-        import pprint
+        # import pprint
         sid = headers['sid']       # event subscription id
         seq = int(headers['seq'])  # event sequence number
         subscription = Subscription.get_instance(sid)
@@ -264,8 +258,8 @@ class EventServer:
             return (None, None)
 
         properties = parsers.parse_event_body(body)
-        log.debug('parse_event_body returned properties:\n%s',
-                  pprint.pformat(properties, indent=2, width=120))
+        # log.debug('parse_event_body returned properties:\n%s',
+        #           pprint.pformat(properties, indent=2, width=120))
         return (subscription, Event(subscription.service, sid, seq, properties))
 
 
@@ -276,7 +270,6 @@ async def _get_local_addr(
         socket.AF_INET, socket.SOCK_DGRAM | socket.SOCK_NONBLOCK)
     with temp_sock:
         await loop.sock_connect(temp_sock, (player.ip_address, 1400))
-        log.debug('temp_sock.getsockname() = %r', temp_sock.getsockname())
         return temp_sock.getsockname()[0]
 
 
