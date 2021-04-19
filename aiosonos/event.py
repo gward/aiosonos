@@ -175,7 +175,8 @@ class EventServer:
     runner: web.ServerRunner
     url: str
 
-    def __init__(self) -> None:
+    def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
+        self.loop = loop
         self.server = None
 
     async def ensure_running(self, player: models.Player) -> None:
@@ -241,7 +242,8 @@ class EventServer:
                 request.headers['content-type'] == 'text/xml'):
             (subscription, event) = self.parse_event(request.headers, body)
             if subscription is not None and event is not None:
-                subscription.handle_event(event)
+                # return response to the Sonos before handling the event
+                self.loop.call_soon(subscription.handle_event, event)
 
         return web.Response(text='')
 
@@ -279,5 +281,5 @@ _server = None
 def get_event_server() -> EventServer:
     global _server
     if _server is None:
-        _server = EventServer()
+        _server = EventServer(utils.get_event_loop())
     return _server
