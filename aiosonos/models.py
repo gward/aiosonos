@@ -33,6 +33,16 @@ class Player:
         self.is_coordinator = None
         self.is_bridge = None
 
+    def __eq__(self, other) -> bool:
+        return (isinstance(other, self.__class__) and
+                self.ip_address == other.ip_address)
+
+    def __ne__(self, other) -> bool:
+        return not self.__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash(self.ip_address)
+
     def __str__(self) -> str:
         if self.uuid is None:
             return self.ip_address

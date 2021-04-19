@@ -11,7 +11,7 @@ place.
 
 import logging
 from xml.etree import ElementTree
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from . import models, upnp, discover, event, parsers
 
@@ -195,6 +195,11 @@ async def subscribe(
     sub = event.Subscription(upnp.get_session(), player, service, callback)
     await sub.subscribe()
     return sub
+
+
+def get_subscriptions_for_player(player: models.Player) -> List[event.Subscription]:
+    '''Return all subscriptions for the specified player.'''
+    return event.Subscription.get_subscriptions(player)
 
 
 async def close() -> None:

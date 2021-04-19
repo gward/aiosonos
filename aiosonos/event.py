@@ -2,7 +2,7 @@ import asyncio
 import logging
 import socket
 import time
-from typing import Optional, Any, ClassVar, Callable, Dict, Tuple
+from typing import Optional, Any, ClassVar, Callable, Dict, List, Tuple
 
 import aiohttp
 import aiohttp.client
@@ -55,6 +55,10 @@ class Subscription:
         for sub in list(cls._instances.values()):
             await sub.unsubscribe()
 
+    @classmethod
+    def get_subscriptions(cls, player: models.Player) -> List['Subscription']:
+        return [sub for sub in cls._instances.values() if sub.player is player]
+
     def __init__(
             self,
             session: aiohttp.client.ClientSession,
@@ -72,6 +76,11 @@ class Subscription:
         self.sid = ''
         self.timeout = -1
         self.timestamp = 0.0
+
+    def __str__(self):
+        return self.sid or '?'
+
+    __repr__ = models.stdrepr
 
     async def subscribe(self) -> None:
         if self.state != 0:
@@ -151,7 +160,7 @@ class Subscription:
             headers=req_headers,
             timeout=1.0,
         )
-        log.info('Unsubscribe response: %r', response)
+        log.info('Unsubscribe response: %r %s', response.status, response.reason)
         if response.status == 200:
             self.state = 2
             del self._instances[self.sid]
