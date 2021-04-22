@@ -18,24 +18,25 @@ EventCB = Callable[['Event'], None]
 
 
 class Event:
-    service: upnp.UPnPService
-    sid: str
+    subscription: 'Subscription'
+    service_type: str
+    player: models.Player
     seq: int
     properties: Dict[str, Any]
 
     def __init__(
             self,
-            service: upnp.UPnPService,
-            sid: str,
+            subscription: 'Subscription',
             seq: int,
             properties: Dict[str, Any]):
-        self.service = service
-        self.sid = sid
+        self.subscription = subscription
+        self.service_type = subscription.service.service_type
+        self.player = subscription.player
         self.seq = seq
         self.properties = properties
 
     def __str__(self):
-        return '{service} {sid} #{seq}'.format(**vars(self))
+        return '{} {} #{}'.format(self.service_type, self.subscription.sid, self.seq)
 
     __repr__ = models.stdrepr
 
@@ -271,7 +272,7 @@ class EventServer:
         properties = parsers.parse_event_body(body)
         # log.debug('parse_event_body returned properties:\n%s',
         #           pprint.pformat(properties, indent=2, width=120))
-        return (subscription, Event(subscription.service, sid, seq, properties))
+        return (subscription, Event(subscription, seq, properties))
 
 
 async def _get_local_addr(
