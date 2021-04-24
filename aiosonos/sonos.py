@@ -191,9 +191,25 @@ async def get_transport_info(player: models.Player) -> Dict[str, Any]:
 async def subscribe(
         player: models.Player,
         service: upnp.UPnPService,
-        callback: event.EventCB) -> event.Subscription:
+        callback: event.EventCB,
+        auto_renew: bool = False) -> event.Subscription:
+    '''Subscribe to events from the specified UPnP service on one player.
+
+    Every event results in a call to ``callback(event)``, where ``event``
+    is an event.Event object.
+
+    The events received are determined by the service and player that you
+    subscribe to. For example, subscribing to upnp.SERVICE_AVTRANSPORT on
+    player ``p`` will results in an event every time the play state of
+    ``p`` changes: start playing, pause playing, stop playing, seek forward
+    or backwards, or change track. Subscribing to upnp.SERVICE_TOPOLOGY on
+    any player will result in an event every time the topology of your
+    network changes. (Topology events are a bit special: all players
+    publish the same topology events on every change, so there is no need
+    to subscribe to more than one player.)
+    '''
     sub = event.Subscription(upnp.get_session(), player, service, callback)
-    await sub.subscribe()
+    await sub.subscribe(auto_renew=auto_renew)
     return sub
 
 

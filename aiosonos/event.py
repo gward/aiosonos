@@ -78,16 +78,17 @@ class Subscription:
         self.timeout = -1
         self.timestamp = 0.0
 
+        self.auto_renew_delay: Optional[int] = None
+        self.auto_renew_task: Optional[asyncio.Task] = None
+
     def __str__(self):
         return self.sid or '?'
 
     __repr__ = models.stdrepr
 
-    async def subscribe(self) -> None:
+    async def subscribe(self, auto_renew=False) -> None:
         if self.state != 0:
             raise errors.SonosError('Can only subscribe a brand-new Subscription object')
-
-        auto_renew = False      # for now
 
         # Make sure we have a running EventServer (HTTP server that can
         # accept callback requests from the Sonos player)
@@ -123,14 +124,7 @@ class Subscription:
         # Register the subscription so it can be cleaned up
         self._instances[self.sid] = self
 
-        timeout = headers["timeout"]
-        # According to the spec, timeout can be "infinite" or "second-123"
-        # where 123 is a number of seconds.  Sonos uses "Second-123"
-        # (with a capital letter)
-        if timeout.lower() == "infinite":
-            self.timeout = -1
-        else:
-            self.timeout = int(timeout.lstrip("Second-"))
+        self.timeout = self._parse_timeout(headers)
         self.timestamp = time.time()
         self.state = 1
         log.debug(
@@ -141,11 +135,50 @@ class Subscription:
         )
 
         # Set up auto_renew
-        if not auto_renew or self.timeout is None:
-            return
-        # Autorenew just before expiry, say at 85% of self.timeout seconds
-        # interval = self.timeout * 85 / 100
-        # self._auto_renew_start(interval)
+        if auto_renew and self.timeout > 0:
+            if self.timeout <= 3600:
+                self.auto_renew_delay = int(self.timeout * 0.95)
+            else:
+                self.auto_renew_delay = self.timeout - 180
+            loop = utils.get_event_loop()
+            # hmmmm, need to cancel this on shutdown
+            self.auto_renew_task = loop.create_task(self._auto_renew_loop())
+
+    async def _auto_renew_loop(self):
+        assert self.auto_renew_delay is not None
+        while True:
+            await asyncio.sleep(self.auto_renew_delay)
+            try:
+                await self.renew()
+            except Exception:
+                log.exception('Failed to auto-renew subscription')
+
+    async def renew(self) -> None:
+        if self.state != 1:
+            raise errors.SonosError('Can only renew a Subscription in subscribed state')
+
+        log.info('Renewing subscription %s', self)
+
+        req_headers = {
+            "SID": self.sid,
+        }
+
+        subscribe_url = self.player.base_url + self.service.event_subscription_url
+        response = await self.session.request(
+            "SUBSCRIBE",
+            subscribe_url,
+            headers=req_headers,
+            timeout=3.0,
+        )
+        response.raise_for_status()
+
+        self.timeout = self._parse_timeout(response.headers)
+        self.timestamp = time.time()
+        log.debug(
+            'Renewed subscription to %s: sid=%s, timeout=%d',
+            subscribe_url,
+            self.sid,
+            self.timeout)
 
     async def unsubscribe(self) -> None:
         if self.state != 1:
@@ -173,6 +206,15 @@ class Subscription:
             headers: Dict[str, str]) -> aiohttp.ClientResponse:
         return await self.session.request(
             method, url, headers=headers, timeout=3.0)
+
+    def _parse_timeout(self, headers: 'multidict.CIMultiDictProxy[str]') -> int:
+        timeout = headers["timeout"]
+        # According to the spec, timeout can be "infinite" or "second-123"
+        # where 123 is a number of seconds.  Sonos uses "Second-123"
+        # (with a capital letter)
+        if timeout.lower() == "infinite":
+            return -1
+        return int(timeout.lstrip("Second-"))
 
     def handle_event(self, event: Event):
         log.info('Subscription %s: received event %r', self.sid, event)

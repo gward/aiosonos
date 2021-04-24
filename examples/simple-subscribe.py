@@ -22,8 +22,8 @@ async def simple_subscribe(done_fut) -> None:
                  event, len(event.properties), ', '.join(event.properties))
 
     log.debug('subscribing...')
-    await sonos.subscribe(player, upnp.SERVICE_TOPOLOGY, handle)
-    await sonos.subscribe(player, upnp.SERVICE_AVTRANSPORT, handle)
+    await sonos.subscribe(player, upnp.SERVICE_TOPOLOGY, handle, auto_renew=True)
+    await sonos.subscribe(player, upnp.SERVICE_AVTRANSPORT, handle, auto_renew=True)
     log.debug('back from sonos.subscribe(): looping until done...')
 
     await done_fut

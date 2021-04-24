@@ -38,15 +38,18 @@ async def fancy_subscribe(done_fut) -> None:
             log.info('New coordinator %r: subscribing to AVTransport service',
                      player)
             loop.create_task(sonos.subscribe(
-                player, upnp.SERVICE_AVTRANSPORT, transport_callback))
+                player, upnp.SERVICE_AVTRANSPORT, transport_callback, auto_renew=True))
 
         old_coordinators = new_coordinators
 
     def transport_callback(evt):
+        # import pprint
+        # log.info('received transport event: %r:\n%s',
+        #          evt, pprint.pformat(vars(evt), width=120))
         log.info('received transport event: %r', evt)
 
     await sonos.subscribe(
-        player, upnp.SERVICE_TOPOLOGY, topology_callback)
+        player, upnp.SERVICE_TOPOLOGY, topology_callback, auto_renew=True)
 
     await done_fut
     await sonos.close()
