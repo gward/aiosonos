@@ -97,3 +97,7 @@ class Network:                  # or is this a household?
         return '{} groups, {} players'.format(len(self.groups), len(self.all_players))
 
     __repr__ = stdrepr
+
+    def get_coordinators(self) -> List[Player]:
+        '''return the list of all group coordinators in the network'''
+        return [group.coordinator for group in self.groups]
