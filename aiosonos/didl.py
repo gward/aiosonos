@@ -1157,6 +1157,23 @@ class DIDLPlaylistContainer(DIDLContainer):
     )
 
 
+class DIDLPlaylistContainerItem(DIDLPlaylistContainer):
+    # Not sure what this represents. Looks like it's just a Spotify
+    # playlist to me. Real-life example:
+    #
+    #  <DIDL-Lite ...>
+    #    <item id="..." parentID="spotify%3aview%3amade-for-x" restricted="true">
+    #      <dc:title>Discover Weekly</dc:title>
+    #      <upnp:class>object.container.playlistContainer#playlistItem</upnp:class>
+    #      <dc:creator>Spotify</dc:creator>
+    #      <upnp:albumArtURI>...</upnp:albumArtURI>
+    #      <desc id="cdudn" nameSpace="urn:...">SA_RINCON3...</desc>
+    #    </item>
+    #  </DIDL-Lite>
+
+    item_class = 'object.container.playlistContainer#playlistItem'
+
+
 class DIDLSameArtist(DIDLPlaylistContainer):
 
     """Class that represents all tracks by a single artist.
