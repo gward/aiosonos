@@ -13,7 +13,7 @@ import logging
 from xml.etree import ElementTree
 from typing import Any, Dict, List
 
-from . import models, upnp, discover, event, parsers
+from . import models, upnp, discover, event, didl, parsers
 
 log = logging.getLogger(__name__)
 
@@ -186,6 +186,52 @@ async def get_transport_info(player: models.Player) -> Dict[str, Any]:
         'status': result['CurrentTransportStatus'],
         'speed': result['CurrentSpeed'],
     }
+
+
+async def get_queue(
+        player: models.Player,
+        start=0,
+        max_items=100,
+        full_album_art_uri=False) -> didl.Queue:
+    '''Get information about the queue.
+
+    :param start: Starting number of returned matches
+    :param max_items: Maximum number of returned matches
+    :param full_album_art_uri: If the album art URI should include the
+        IP address
+    :returns: A :py:class:`~.models.Queue` object
+
+    This method is heavily based on Sam Soffes (aka soffes) ruby
+    implementation
+    '''
+    client = upnp.get_upnp_client(player)
+    result = await client.send_command(
+        upnp.SERVICE_CONTENT_DIRECTORY,
+        'Browse',
+        [
+            ('ObjectID', 'Q:0'),
+            ('BrowseFlag', 'BrowseDirectChildren'),
+            ('Filter', '*'),
+            ('StartingIndex', start),
+            ('RequestedCount', max_items),
+            ('SortCriteria', ''),
+        ],
+    )
+
+    queue: List[didl.DIDLObject] = []
+    items = parsers.parse_didl(result['Result'])
+    for item in items:
+        # Check if the album art URI should be fully qualified
+        # if full_album_art_uri:
+        #     self.music_library._update_album_art_to_full_uri(item)
+        queue.append(item)
+
+    return didl.Queue(
+        queue,
+        result['NumberReturned'],
+        result['TotalMatches'],
+        result['UpdateID'],
+    )
 
 
 async def subscribe(

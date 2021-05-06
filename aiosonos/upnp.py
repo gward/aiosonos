@@ -110,8 +110,45 @@ class AVTransport(UPnPService):
         )
 
 
+class ContentDirectory(UPnPService):
+    '''UPnP standard Content Directory service, for functions relating to
+    browsing, searching and listing available music.'''
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.control_url = 'MediaServer/ContentDirectory/Control'
+        self.event_subscription_url = '/MediaServer/ContentDirectory/Event'
+        # For error codes, see table 2.7.16 in
+        # http://upnp.org/specs/av/UPnP-av-ContentDirectory-v1-Service.pdf
+        self.upnp_errors.update(
+            {
+                701: 'No such object',
+                702: 'Invalid CurrentTagValue',
+                703: 'Invalid NewTagValue',
+                704: 'Required tag',
+                705: 'Read only tag',
+                706: 'Parameter Mismatch',
+                708: 'Unsupported or invalid search criteria',
+                709: 'Unsupported or invalid sort criteria',
+                710: 'No such container',
+                711: 'Restricted object',
+                712: 'Bad metadata',
+                713: 'Restricted parent object',
+                714: 'No such source resource',
+                715: 'Resource access denied',
+                716: 'Transfer busy',
+                717: 'No such file transfer',
+                718: 'No such destination resource',
+                719: 'Destination resource access denied',
+                720: 'Cannot process the request',
+            }
+        )
+
+
 SERVICE_TOPOLOGY = ZoneGroupTopology()
 SERVICE_AVTRANSPORT = AVTransport()
+SERVICE_CONTENT_DIRECTORY = ContentDirectory()
 
 
 class UPnPClient:
