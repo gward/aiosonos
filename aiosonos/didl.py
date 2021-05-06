@@ -22,8 +22,6 @@ helpful.
 
 
 import logging
-import textwrap
-import warnings
 from xml.etree import ElementTree
 from typing import Type, Iterable
 
@@ -1250,37 +1248,6 @@ class ListOfMusicInfoItems(list):
             "total_matches": total_matches,
             "update_id": update_id,
         }
-
-    def __getitem__(self, key):
-        """Legacy get metadata by string key or list item(s) by index.
-
-        .. deprecated:: 0.8
-
-            This overriding form of __getitem__ will be removed in the 3rd
-            release after 0.8. The metadata can be fetched via the named
-            attributes.
-        """
-        if key in self._metadata:
-            if key == "item_list":
-                message = """
-                Calling [\'item_list\'] on search results to obtain the objects
-                is no longer necessary, since the object returned from searches
-                now is a list. This deprecated way of getting the items will
-                be removed from the third release after 0.8."""
-            else:
-                message = """
-                Getting metadata items by indexing the search result like a
-                dictionary [\'{0}\'] is deprecated. Please use the named
-                attribute {1}.{0} instead. The deprecated way of retrieving the
-                metadata will be removed from the third release after
-                0.8""".format(
-                    key, self.__class__.__name__
-                )
-            message = textwrap.dedent(message).replace("\n", " ").lstrip()
-            warnings.warn(message, stacklevel=2)
-            return self._metadata[key]
-        else:
-            return super().__getitem__(key)
 
     @property
     def number_returned(self):
