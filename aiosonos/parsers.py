@@ -214,10 +214,14 @@ def parse_last_change(text: str) -> Dict[str, Any]:
             value = variable.text
         assert value is not None
 
-        # If DIDL metadata is returned, convert it to a music
-        # library data structure (disabled for now!)
+        # If DIDL metadata is returned, convert it to a music library data
+        # structure.
         if value.startswith('<DIDL-Lite'):
-            value = parse_didl(value)[0]
+            didl_items = parse_didl(value)
+            if didl_items:
+                value = didl_items[0]
+            else:
+                value = None
         channel = variable.get('channel')
         if channel is not None:
             if result.get(tag) is None:
@@ -247,6 +251,9 @@ def parse_didl(didl_xml: str) -> List[didl.DIDLObject]:
             item_class = elt.findtext(utils.ns_tag('upnp', 'class'))
             assert item_class is not None, 'no item class found in %s' % (elt,)
             cls = didl.get_didl_class(item_class)
+            if cls is None:
+                log.error('Unknown DIDL item class: %s', item_class)
+                continue
             item = cls.from_element(elt)
             items.append(item)
         else:

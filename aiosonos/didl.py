@@ -23,7 +23,7 @@ helpful.
 
 import logging
 from xml.etree import ElementTree
-from typing import Type, Iterable
+from typing import Optional, Type, Iterable
 
 from . import errors, utils
 
@@ -60,12 +60,12 @@ def to_didl_string(*args):
     return ElementTree.tostring(didl, encoding="unicode")
 
 
-def get_didl_class(didl_class: str) -> Type['DIDLObject']:
+def get_didl_class(didl_class: str) -> Optional[Type['DIDLObject']]:
     """Translate a DIDL-Lite class to the corresponding SoCo data structures class"""
     # Certain music services has been observed to sub-class via a .# syntax
     # instead of just . we simply replace it with the official syntax
     didl_class = didl_class.replace(".#", ".")
-    return _DIDL_CLASS_TO_CLASS[didl_class]
+    return _DIDL_CLASS_TO_CLASS.get(didl_class)
 
     # try:
     #     cls = _DIDL_CLASS_TO_CLASS[didl_class]
