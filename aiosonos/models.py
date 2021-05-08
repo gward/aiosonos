@@ -1,6 +1,8 @@
 import logging
 from typing import Optional, ClassVar, Dict, List
 
+from didl_lite import didl_lite as didl
+
 log = logging.getLogger(__name__)
 
 
@@ -101,3 +103,28 @@ class Network:                  # or is this a household?
     def get_coordinators(self) -> List[Player]:
         '''return the list of all group coordinators in the network'''
         return [group.coordinator for group in self.groups]
+
+
+class TrackList:
+    '''A list of music tracks. Used for queues and search results.'''
+    tracks: List[didl.MusicTrack]
+    number_returned: int
+    total_matches: int
+    update_id: str
+
+    def __init__(
+            self,
+            tracks: List[didl.MusicTrack],
+            number_returned: int,
+            total_matches: int,
+            update_id: str):
+        self.tracks = tracks
+        self.number_returned = number_returned
+        self.total_matches = total_matches
+        self.update_id = update_id
+
+    def __iter__(self):
+        return iter(self.tracks)
+
+    def __len__(self):
+        return len(self.tracks)

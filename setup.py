@@ -7,6 +7,7 @@ but heavily modified to use asyncio and aiohttp.
 
 install_requires = [
     'aiohttp',                  # not sure of minimum version
+    'python-didl-lite >= 1.2.6',
 ]
 dev_requires = [
     'pyflakes',

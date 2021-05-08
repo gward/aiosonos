@@ -4,7 +4,9 @@ import logging
 from xml.etree import ElementTree
 from typing import Union, Any, Dict, List
 
-from . import utils, models, didl, errors
+from didl_lite import didl_lite as didl
+
+from . import models
 
 log = logging.getLogger(__name__)
 
@@ -208,7 +210,7 @@ def parse_last_change(text: str) -> Dict[str, Any]:
         # 'channel' attribute. In addition, it seems that Sonos
         # sometimes uses a text value instead: see
         # http://forums.sonos.com/showthread.php?t=34663
-        value: Union[None, str, didl.DIDLObject]
+        value: Union[None, str, didl.DidlObject]
         value = variable.get('val')
         if value is None:
             value = variable.text
@@ -233,7 +235,7 @@ def parse_last_change(text: str) -> Dict[str, Any]:
     return result
 
 
-def parse_didl(didl_xml: str) -> List[didl.DIDLObject]:
+def parse_didl(didl_xml: str) -> List[didl.DidlObject]:
     '''Parse an XML representation of DIDL (Digital Item Declaration Language) items
 
     Args:
@@ -245,22 +247,10 @@ def parse_didl(didl_xml: str) -> List[didl.DIDLObject]:
         list: A list of one or more instances of `DIDLObject` or a subclass
     '''
     items = []
-    root = ElementTree.fromstring(didl_xml)
-    for elt in root:
-        if elt.tag.endswith('item') or elt.tag.endswith('container'):
-            item_class = elt.findtext(utils.ns_tag('upnp', 'class'))
-            assert item_class is not None, 'no item class found in %s' % (elt,)
-            cls = didl.get_didl_class(item_class)
-            if cls is None:
-                log.error('Unknown DIDL item class: %s', item_class)
-                continue
-            item = cls.from_element(elt)
-            items.append(item)
-        else:
-            # <desc> elements are allowed as an immediate child of <DIDL-Lite>
-            # according to the spec, but I have not seen one there in Sonos, so
-            # we treat them as illegal. May need to fix this if this
-            # causes problems.
-            raise errors.DIDLMetadataError(
-                'Illegal child of DIDL element: <%s>' % elt.tag)
+    for item in didl.from_xml_string(didl_xml):
+        # Sonos does not appear to use didl_lite:desc, so we should never
+        # receive Descriptor objects from the didl_lite library. Use that
+        # fact to simplify the type signature a bit.
+        assert isinstance(item, didl.DidlObject)
+        items.append(item)
     return items

@@ -13,7 +13,9 @@ import logging
 from xml.etree import ElementTree
 from typing import Any, Dict, List
 
-from . import models, upnp, discover, event, didl, parsers
+from didl_lite import didl_lite as didl
+
+from . import models, upnp, discover, event, parsers
 
 log = logging.getLogger(__name__)
 
@@ -192,7 +194,7 @@ async def get_queue(
         player: models.Player,
         start=0,
         max_items=100,
-        full_album_art_uri=False) -> didl.Queue:
+        full_album_art_uri=False) -> models.TrackList:
     '''Get information about the queue.
 
     :param start: Starting number of returned matches
@@ -218,18 +220,20 @@ async def get_queue(
         ],
     )
 
-    queue: List[didl.DIDLObject] = []
     items = parsers.parse_didl(result['Result'])
-    for item in items:
-        # Check if the album art URI should be fully qualified
-        # if full_album_art_uri:
-        #     self.music_library._update_album_art_to_full_uri(item)
-        queue.append(item)
+    print(type(items))
+    print(type(items[0]))
+    print(type(items[0]).__mro__)
 
-    return didl.Queue(
-        queue,
-        result['NumberReturned'],
-        result['TotalMatches'],
+    tracks: List[didl.MusicTrack] = []
+    for item in items:
+        if isinstance(item, didl.MusicTrack):
+            tracks.append(item)
+
+    return models.TrackList(
+        tracks,
+        int(result['NumberReturned']),
+        int(result['TotalMatches']),
         result['UpdateID'],
     )
 
