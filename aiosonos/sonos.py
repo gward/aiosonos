@@ -238,6 +238,38 @@ async def get_queue(
     )
 
 
+async def clear_queue(player: models.Player):
+    client = upnp.get_upnp_client(player)
+    result = await client.send_command(
+        upnp.SERVICE_AVTRANSPORT,
+        'RemoveAllTracksFromQueue',
+        [
+            ('InstanceID', 0),
+        ],
+    )
+    log.debug('clear_queue: result = %r', result)
+
+
+async def add_uri_to_queue(
+        player: models.Player,
+        uri: str,
+        position=0,
+        as_next=False):
+    client = upnp.get_upnp_client(player)
+    result = await client.send_command(
+        upnp.SERVICE_AVTRANSPORT,
+        'AddURIToQueue',
+        [
+            ('InstanceID', 0),
+            ('EnqueuedURI', uri),
+            ('EnqueuedURIMetaData', ''),     # must be present, otherwise ignored
+            ('DesiredFirstTrackNumberEnqueued', position),
+            ('EnqueueAsNext', int(as_next)),
+        ],
+    )
+    log.debug('add_uri_to_queue: result = %r', result)
+
+
 async def subscribe(
         player: models.Player,
         service: upnp.UPnPService,
