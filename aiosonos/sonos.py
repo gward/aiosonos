@@ -329,3 +329,11 @@ async def close() -> None:
     '''Release any resources held by this library.'''
     await event.Subscription.unsubscribe_all()
     await upnp.close()
+
+
+def parse_time(time_str: str) -> int:
+    """convert a string of the form h:mm:ss to seconds"""
+    if time_str == 'NOT_IMPLEMENTED':
+        return -1
+    bits = time_str.split(':')
+    return int(bits[0]) * 3600 + int(bits[1]) * 60 + int(bits[2])
