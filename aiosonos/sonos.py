@@ -190,6 +190,31 @@ async def get_transport_info(player: models.Player) -> Dict[str, Any]:
     }
 
 
+async def play(player: models.Player):
+    '''Start playing the currently selected track on player.'''
+    await _simple_avtransport_command(player, 'Play')
+
+
+async def pause(player: models.Player):
+    await _simple_avtransport_command(player, 'Pause')
+
+
+async def stop(player: models.Player):
+    await _simple_avtransport_command(player, 'Stop')
+
+
+async def _simple_avtransport_command(player: models.Player, command: str):
+    client = upnp.get_upnp_client(player)
+    await client.send_command(
+        upnp.SERVICE_AVTRANSPORT,
+        command,
+        [
+            ('InstanceID', 0),
+            ('Speed', 1),
+        ],
+    )
+
+
 async def get_queue(
         player: models.Player,
         start=0,
