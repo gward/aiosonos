@@ -118,7 +118,7 @@ class ContentDirectory(UPnPService):
         super().__init__()
 
         self.control_url = 'MediaServer/ContentDirectory/Control'
-        self.event_subscription_url = '/MediaServer/ContentDirectory/Event'
+        self.event_subscription_url = 'MediaServer/ContentDirectory/Event'
         # For error codes, see table 2.7.16 in
         # http://upnp.org/specs/av/UPnP-av-ContentDirectory-v1-Service.pdf
         self.upnp_errors.update(
@@ -146,9 +146,20 @@ class ContentDirectory(UPnPService):
         )
 
 
+class Queue(UPnPService):
+    '''Sonos queue service, for functions relating to queue management, saving
+    queues etc.'''
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.control_url = 'MediaRenderer/Queue/Control'
+        self.event_subscription_url = 'MediaRenderer/Queue/Event'
+
+
 SERVICE_TOPOLOGY = ZoneGroupTopology()
 SERVICE_AVTRANSPORT = AVTransport()
 SERVICE_CONTENT_DIRECTORY = ContentDirectory()
+SERVICE_QUEUE = Queue()
 
 
 class UPnPClient:

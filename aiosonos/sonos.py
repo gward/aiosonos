@@ -307,7 +307,7 @@ async def subscribe(
 
     The events received are determined by the service and player that you
     subscribe to. For example, subscribing to upnp.SERVICE_AVTRANSPORT on
-    player ``p`` will results in an event every time the play state of
+    player ``p`` will result in an event every time the play state of
     ``p`` changes: start playing, pause playing, stop playing, seek forward
     or backwards, or change track. Subscribing to upnp.SERVICE_TOPOLOGY on
     any player will result in an event every time the topology of your
