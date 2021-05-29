@@ -246,9 +246,6 @@ async def get_queue(
     )
 
     items = parsers.parse_didl(result['Result'])
-    print(type(items))
-    print(type(items[0]))
-    print(type(items[0]).__mro__)
 
     tracks: List[didl.MusicTrack] = []
     for item in items:
