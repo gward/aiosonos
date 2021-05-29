@@ -104,6 +104,13 @@ class Network:                  # or is this a household?
         '''return the list of all group coordinators in the network'''
         return [group.coordinator for group in self.groups]
 
+    def get_group(self, coordinator: Player) -> Optional[Group]:
+        '''return the group with the specified coordinator (or None)'''
+        for group in self.groups:
+            if group.coordinator == coordinator:
+                return group
+        return None
+
 
 class TrackList:
     '''A list of music tracks. Used for queues and search results.'''
