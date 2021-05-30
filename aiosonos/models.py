@@ -1,5 +1,6 @@
 import logging
 from typing import Optional, ClassVar, Dict, List
+from urllib import parse as urlparse
 
 from didl_lite import didl_lite as didl
 
@@ -59,6 +60,11 @@ class Player:
             self.name,
             ' (coordinator)' if self.is_coordinator else '',
         )
+
+    def get_url(self, path: Optional[str]) -> Optional[str]:
+        if path:
+            return urlparse.urljoin(self.base_url, path)
+        return None
 
 
 class Group:

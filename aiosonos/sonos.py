@@ -83,8 +83,9 @@ async def get_current_track_info(player: models.Player) -> Dict[str, Any]:
         'GetPositionInfo',
         [('InstanceID', 0), ('Channel', 'Master')]
     )
-    log.debug('GetPositionInfo result: %r', result)
-    return _parse_track_info(result)
+    track = _parse_track_info(result)
+    track['album_art'] = player.get_url(track['album_art'])
+    return track
 
 
 def _parse_track_info(result: Dict[str, Any]) -> Dict[str, Any]:
@@ -150,14 +151,8 @@ def _parse_track_info(result: Dict[str, Any]) -> Dict[str, Any]:
         if md_album:
             track['album'] = md_album
 
-        album_art_url = metadata.findtext(
-            './/{urn:schemas-upnp-org:metadata-1-0/upnp/}albumArtURI'
-        )
-        if album_art_url is not None:
-            # track['album_art'] = self.music_library.build_album_art_full_uri(
-            #     album_art_url
-            # )
-            pass
+        track['album_art'] = metadata.findtext(
+            './/{urn:schemas-upnp-org:metadata-1-0/upnp/}albumArtURI')
 
     return track
 
@@ -250,6 +245,7 @@ async def get_queue(
     tracks: List[didl.MusicTrack] = []
     for item in items:
         if isinstance(item, didl.MusicTrack):
+            item.album_art_uri = player.get_url(item.album_art_uri)   # type: ignore
             tracks.append(item)
 
     return models.TrackList(
