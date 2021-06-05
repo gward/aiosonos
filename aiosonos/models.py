@@ -136,6 +136,11 @@ class TrackList:
         self.total_matches = total_matches
         self.update_id = update_id
 
+    def __str__(self):
+        return '{} tracks'.format(len(self.tracks))
+
+    __repr__ = stdrepr
+
     def __iter__(self):
         return iter(self.tracks)
 
