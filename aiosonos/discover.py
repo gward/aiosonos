@@ -83,6 +83,10 @@ class DiscoveryProtocol(asyncio.protocols.BaseProtocol):
             self.player_fut.set_result(models.Player(addr[0]))
             self.transport.close()
 
+    def error_received(self, exc: Exception):
+        log.exception("error discovering sonos: %s", exc)
+        self.player_fut.set_exception(exc)
+
     def connection_lost(self, exc: Optional[Exception]) -> None:
         log.debug("DiscoveryProtocol: connection lost: exc=%r", exc)
 
