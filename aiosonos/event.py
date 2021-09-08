@@ -75,6 +75,7 @@ class Subscription:
 
         # these will be set when we subscribe to something
         self.sid = ''
+        self.subscribe_url = ''
         self.timeout = -1
         self.timestamp = 0.0
 
@@ -108,10 +109,11 @@ class Subscription:
             "NT": "upnp:event",
         }
 
-        subscribe_url = self.player.base_url + self.service.event_subscription_url
+        self.subscribe_url = (self.player.base_url +
+                              self.service.event_subscription_url)
         response = await self.session.request(
             "SUBSCRIBE",
-            subscribe_url,
+            self.subscribe_url,
             headers=req_headers,
             timeout=3.0,
         )
@@ -128,10 +130,11 @@ class Subscription:
         self.timestamp = time.time()
         self.state = 1
         log.debug(
-            "Subscribed to %s: sid=%s, timeout=%d",
-            subscribe_url,
-            self.sid,
+            'Subscription %s: subscribed (url=%s, timeout=%d, state=%d)',
+            self,
+            self.subscribe_url,
             self.timeout,
+            self.state,
         )
 
         # Set up auto_renew
@@ -151,22 +154,23 @@ class Subscription:
             try:
                 await self.renew()
             except Exception:
-                log.exception('Failed to auto-renew subscription')
+                log.exception('Subscription %s: failed to auto-renew (url=%s, state=%d)',
+                              self, self.subscribe_url, self.state)
 
     async def renew(self) -> None:
         if self.state != 1:
             raise errors.SonosError('Can only renew a Subscription in subscribed state')
 
-        log.info('Renewing subscription %s', self)
+        log.info('Subscription %s: renewing (url=%s, state=%d)',
+                 self, self.subscribe_url, self.state)
 
         req_headers = {
             "SID": self.sid,
         }
 
-        subscribe_url = self.player.base_url + self.service.event_subscription_url
         response = await self.session.request(
             "SUBSCRIBE",
-            subscribe_url,
+            self.subscribe_url,
             headers=req_headers,
             timeout=3.0,
         )
@@ -175,14 +179,13 @@ class Subscription:
         self.timeout = self._parse_timeout(response.headers)
         self.timestamp = time.time()
         log.debug(
-            'Renewed subscription to %s: sid=%s, timeout=%d',
-            subscribe_url,
-            self.sid,
-            self.timeout)
+            'Subscription %s: renewed (url=%s, state=%d)',
+            self, self.subscribe_url, self.state)
 
     async def unsubscribe(self) -> None:
         if self.state != 1:
-            log.info('Nothing to unsubscribe')
+            log.info('Subscription %s: nothing to unsubscribe (state=%d)',
+                     self, self.state)
             return
 
         req_headers = {
@@ -194,7 +197,8 @@ class Subscription:
             headers=req_headers,
             timeout=1.0,
         )
-        log.info('Unsubscribe response: %r %s', response.status, response.reason)
+        log.info('Subscription %s: unsubscribe response: %r %s',
+                 self, response.status, response.reason)
         if response.status == 200:
             self.state = 2
             del self._instances[self.sid]
