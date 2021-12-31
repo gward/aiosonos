@@ -13,6 +13,7 @@ dev_requires = [
     'pyflakes',
     'pycodestyle',
     'mypy',
+    'pytest >= 6.0.0',
 ]
 
 setup(
