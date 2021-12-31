@@ -247,7 +247,7 @@ def parse_didl(didl_xml: str) -> List[didl.DidlObject]:
         list: A list of one or more instances of `DIDLObject` or a subclass
     '''
     items = []
-    for item in didl.from_xml_string(didl_xml):
+    for item in didl.from_xml_string(didl_xml, strict=False):
         # Sonos does not appear to use didl_lite:desc, so we should never
         # receive Descriptor objects from the didl_lite library. Use that
         # fact to simplify the type signature a bit.
