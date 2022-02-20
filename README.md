@@ -31,3 +31,17 @@ And here are reasons you might want to try aiosonos:
 For now, the documentation is the source code.
 Start in aiosonos/api.py and aiosonos/discover.py.
 Everything else is an implementation detail.
+
+## Development
+
+Setup a virtualenv:
+```
+python3 -m venv venv
+source venv/bin/activate
+pip install -e '.[dev]'
+```
+
+Run the tests:
+```
+./test.sh
+```
