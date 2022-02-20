@@ -1,4 +1,5 @@
 import asyncio
+import asyncio.base_events
 import logging
 import socket
 import time
@@ -249,7 +250,7 @@ class EventServer:
 
         # ugh: need to look at private attr site._server to determine the
         # real port that the kernel selected
-        assert site._server is not None
+        assert isinstance(site._server, asyncio.base_events.Server)
         assert site._server.sockets is not None
         (addr, port) = site._server.sockets[0].getsockname()
         self.url = 'http://{}:{}/'.format(addr, port)
