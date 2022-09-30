@@ -38,7 +38,7 @@ def _create_udp_socket() -> socket.socket:
 
 
 class DiscoveryProtocol(asyncio.protocols.BaseProtocol):
-    """implements asyncio.protcols.DatagramProtocol interface"""
+    """implements asyncio.protocols.DatagramProtocol interface"""
     server_re = re.compile(
         rb'^server:.*\bsonos/', re.IGNORECASE | re.MULTILINE)
 
@@ -78,7 +78,7 @@ class DiscoveryProtocol(asyncio.protocols.BaseProtocol):
         # X-RINCON-BOOTSEQ: 3
         # X-RINCON-HOUSEHOLD: Sonos_7O********************R7eU
 
-        log.debug('DiscoveryProtocol: datagram received from addr %s', addr)
+        log.debug('DiscoveryProtocol.datagram_received: addr = %s', addr)
         if self.server_re.search(data):
             self.player_fut.set_result(models.Player(addr[0]))
             self.transport.close()
@@ -103,7 +103,6 @@ async def discover_one(timeout) -> models.Player:
             player_fut,
         )
 
-    # XXX timeout?
     # XXX SoCo allows caller to specify interface address
     # XXX SoCo goes to lots of trouble to figure out the right interface
     sock = _create_udp_socket()
