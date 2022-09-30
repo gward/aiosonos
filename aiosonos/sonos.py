@@ -20,14 +20,14 @@ from . import models, upnp, discover, event, parsers
 log = logging.getLogger(__name__)
 
 
-async def discover_one() -> models.Player:
+async def discover_one(timeout: float = 5.0) -> models.Player:
     '''Discover the local Sonos network and return one arbitrary Player.
 
     Send a UPnP discovery packet and wait for responses to arrive. As soon
     as one arrives, construct a Player object based on that response and
     return it. Ignore any further responses.
     '''
-    return await discover.discover_one()
+    return await discover.discover_one(timeout)
 
 
 def get_player(ip_address: str) -> models.Player:

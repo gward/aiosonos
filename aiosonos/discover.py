@@ -91,7 +91,7 @@ class DiscoveryProtocol(asyncio.protocols.BaseProtocol):
             log.info("UDP connection lost: %s", exc)
 
 
-async def discover_one() -> models.Player:
+async def discover_one(timeout) -> models.Player:
     loop = utils.get_event_loop()
     player_fut = loop.create_future()
 
@@ -109,7 +109,7 @@ async def discover_one() -> models.Player:
     sock = _create_udp_socket()
     (transport, protocol) = await loop.create_datagram_endpoint(
         factory, sock=sock)
-    return await player_fut
+    return await asyncio.wait_for(player_fut, timeout)
 
 
 if __name__ == '__main__':
@@ -118,5 +118,5 @@ if __name__ == '__main__':
         level=logging.DEBUG,
         stream=sys.stdout,
     )
-    result = asyncio.get_event_loop().run_until_complete(discover_one())
+    result = asyncio.get_event_loop().run_until_complete(discover_one(3.0))
     print(repr(result))
