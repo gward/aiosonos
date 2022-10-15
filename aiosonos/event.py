@@ -244,7 +244,7 @@ class EventServer:
         self.runner = web.ServerRunner(self.server)
         await self.runner.setup()
 
-        ip_addr = await _get_local_addr(utils.get_event_loop(), player)
+        ip_addr = await _get_local_addr(self.loop, player)
         site = web.TCPSite(self.runner, ip_addr, 0)
         await site.start()
 

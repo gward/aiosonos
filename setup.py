@@ -14,6 +14,7 @@ dev_requires = [
     'pycodestyle',
     'mypy',
     'pytest >= 6.0.0',
+    'pytest-asyncio <= 0.17.0',    # 0.17.0 requires Python >= 3.7
 ]
 
 setup(

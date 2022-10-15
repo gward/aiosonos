@@ -37,8 +37,7 @@ def _create_udp_socket() -> socket.socket:
     return sock
 
 
-class DiscoveryProtocol(asyncio.protocols.BaseProtocol):
-    """implements asyncio.protocols.DatagramProtocol interface"""
+class DiscoveryProtocol(asyncio.protocols.DatagramProtocol):
     server_re = re.compile(
         rb'^server:.*\bsonos/', re.IGNORECASE | re.MULTILINE)
 
