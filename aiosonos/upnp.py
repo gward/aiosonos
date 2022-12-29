@@ -362,7 +362,7 @@ class UPnPClient:
         raise errors.SonosError(xml_error)
 
     @staticmethod
-    def wrap_arguments(args: List[Tuple[str, str]] = None) -> str:
+    def wrap_arguments(args: SOAPArgs = None) -> str:
         """Wrap a list of tuples in xml ready to pass into a SOAP request.
 
         Args:
