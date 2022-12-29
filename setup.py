@@ -9,6 +9,9 @@ install_requires = [
     'aiohttp',                  # not sure of minimum version
     'python-didl-lite >= 1.2.6',
 ]
+cli_requires = [
+    'click >= 8.1',
+]
 dev_requires = [
     'pyflakes',
     'pycodestyle',
@@ -26,5 +29,13 @@ setup(
     author_email='greg@gerg.ca',
     packages=['aiosonos'],
     install_requires=install_requires,
-    extras_require={'dev': dev_requires},
+    extras_require={
+        'cli': cli_requires,
+        'dev': dev_requires,
+    },
+    entry_points={
+        'console_scripts': [
+            'sntool = aiosonos.sntool:main',
+        ],
+    },
 )
