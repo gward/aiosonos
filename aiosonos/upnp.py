@@ -211,8 +211,12 @@ class UPnPClient:
         '''
         headers, body = self.build_command(service, action, args)
         url = self.base_url + service.control_url
-        log.info('Sending %s %s to %s', action, args, url)
-        log.debug('Sending %s, %s', headers, utils.prettify(body))
+        utils.log_network(
+            log,
+            'Sending UPnP command %s to %s',
+            action,
+            url,
+            data=utils.prettify(body))
         # Convert the body to bytes, and send it.
         response = await self.session.post(
             url, headers=headers, data=body.encode())
@@ -220,7 +224,11 @@ class UPnPClient:
             response_text = await response.text()
 
         status = response.status
-        log.info('Received status %s', status)
+        utils.log_network(
+            log,
+            'Received UPnP response %d',
+            status,
+            data=utils.prettify(response_text))
         if status == 200:
             # The response is good. Get the output params, and return them.
             # NB an empty dict is a valid result. It just means that no

@@ -53,6 +53,12 @@ class DiscoveryProtocol(asyncio.protocols.DatagramProtocol):
         self.player_fut = player_fut
 
     def connection_made(self, transport: asyncio.transports.DatagramTransport) -> None:  # type: ignore # mypy wants BaseTransport # nopep8
+        utils.log_network(
+            log,
+            'Discovery: multicasting to %s:%s',
+            self.multicast_group,
+            self.multicast_port,
+            data=self.data)
         self.transport = transport
         self.transport.sendto(
             self.data, (self.multicast_group, self.multicast_port))
@@ -77,7 +83,12 @@ class DiscoveryProtocol(asyncio.protocols.DatagramProtocol):
         # X-RINCON-BOOTSEQ: 3
         # X-RINCON-HOUSEHOLD: Sonos_7O********************R7eU
 
-        log.debug('DiscoveryProtocol.datagram_received: addr = %s', addr)
+        utils.log_network(
+            log,
+            'Discovery: received multicast response from %s:%s',
+            addr[0],
+            addr[1],
+            data=data)
         if self.server_re.search(data):
             self.player_fut.set_result(models.Player(addr[0]))
             self.transport.close()

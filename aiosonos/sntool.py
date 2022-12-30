@@ -27,7 +27,8 @@ def main(debug):
         1: logging.INFO,
         2: logging.DEBUG,
     }
-    logging.getLogger('aiosonos').setLevel(level_map.get(debug, logging.DEBUG))
+    level = level_map.get(debug, logging.DEBUG - 1)
+    logging.getLogger('aiosonos').setLevel(level)
 
 
 @main.command()

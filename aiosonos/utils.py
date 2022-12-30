@@ -1,4 +1,6 @@
 import asyncio
+import logging
+from typing import Any, Union
 
 
 try:
@@ -53,3 +55,12 @@ def ns_tag(ns_id, tag):
         '{http://purl.org/dc/elements/1.1/}author'
     '''
     return '{{{}}}{}'.format(NAMESPACES[ns_id], tag)
+
+
+def log_network(log: logging.Logger, fmt: str, *args: Any, data: Union[bytes, str]):
+    if log.isEnabledFor(logging.DEBUG - 1):  # log the data too
+        fmt += ':\n%s'
+        if isinstance(data, bytes):
+            data = data.decode('utf-8')
+        args = args + (data,)
+    log.debug(fmt, *args)
