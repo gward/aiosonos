@@ -6,7 +6,7 @@ import re
 import socket
 import struct
 import sys
-from typing import Optional, Tuple
+from typing import AsyncGenerator, Optional, Tuple
 
 from . import models, utils
 
@@ -46,11 +46,15 @@ class DiscoveryProtocol(asyncio.protocols.DatagramProtocol):
             data: bytes,
             multicast_group: str,
             multicast_port: int,
-            player_fut: asyncio.Future):
+            player_queue: asyncio.Queue[models.Player]):
         self.data = data
         self.multicast_group = multicast_group
         self.multicast_port = multicast_port
-        self.player_fut = player_fut
+        self.player_queue = player_queue
+
+    def close(self):
+        if self.transport is not None:
+            self.transport.close()
 
     def connection_made(self, transport: asyncio.transports.DatagramTransport) -> None:  # type: ignore # mypy wants BaseTransport # nopep8
         utils.log_network(
@@ -90,35 +94,49 @@ class DiscoveryProtocol(asyncio.protocols.DatagramProtocol):
             addr[1],
             data=data)
         if self.server_re.search(data):
-            self.player_fut.set_result(models.Player(addr[0]))
-            self.transport.close()
-
-    def error_received(self, exc: Exception):
-        self.player_fut.set_exception(exc)
+            self.player_queue.put_nowait(models.Player(addr[0]))
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         if exc is not None:
             log.info("UDP connection lost: %s", exc)
 
 
-async def discover_one(timeout) -> models.Player:
+async def discover_one(timeout: float) -> models.Player:
+    (player_queue, setup) = _setup_discover()
+    (transport, protocol) = await setup
+    try:
+        return await asyncio.wait_for(player_queue.get(), timeout)
+    finally:
+        transport.close()
+
+
+async def discover_all(timeout: float) -> AsyncGenerator[models.Player, None]:
+    (player_queue, setup) = _setup_discover()
+    (transport, protocol) = await setup
+    try:
+        while True:
+            yield await asyncio.wait_for(player_queue.get(), timeout)
+    except asyncio.TimeoutError:
+        pass
+    finally:
+        transport.close()
+
+
+def _setup_discover():
     loop = utils.get_event_loop()
-    player_fut = loop.create_future()
+    player_queue: asyncio.Queue[models.Player] = asyncio.Queue()
 
     def factory() -> asyncio.protocols.BaseProtocol:
         return DiscoveryProtocol(
             PLAYER_SEARCH,
             MULTICAST_GROUP,
             MULTICAST_PORT,
-            player_fut,
+            player_queue,
         )
 
-    # XXX SoCo allows caller to specify interface address
-    # XXX SoCo goes to lots of trouble to figure out the right interface
     sock = _create_udp_socket()
-    (transport, protocol) = await loop.create_datagram_endpoint(
-        factory, sock=sock)
-    return await asyncio.wait_for(player_fut, timeout)
+    setup = loop.create_datagram_endpoint(factory, sock=sock)
+    return (player_queue, setup)
 
 
 if __name__ == '__main__':

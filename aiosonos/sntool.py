@@ -32,8 +32,12 @@ def main(debug):
 
 
 @main.command()
-def discover():
-    asyncio.run(_discover())
+@click.option('--all/--one', '-a/-1', 'discover_all',
+              default=False, help='Wait for all players to be discovered')
+@click.option('--timeout', '-t', default=1.0)
+def discover(discover_all, timeout):
+    task = _discover_all if discover_all else _discover
+    asyncio.run(task(timeout))
 
 
 @main.command()
@@ -41,9 +45,15 @@ def groups():
     asyncio.run(_groups())
 
 
-async def _discover():
-    player = await sonos.discover_one()
+async def _discover(timeout: float):
+    player = await sonos.discover_one(timeout)
     print(player)
+    await sonos.close()
+
+
+async def _discover_all(timeout: float):
+    async for player in await sonos.discover_all(timeout):
+        print(player)
     await sonos.close()
 
 

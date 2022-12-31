@@ -11,7 +11,7 @@ place.
 
 import logging
 from xml.etree import ElementTree
-from typing import Any, Dict, List
+from typing import Any, AsyncGenerator, Dict, List
 
 from didl_lite import didl_lite as didl
 
@@ -20,7 +20,7 @@ from . import models, upnp, discover, event, parsers
 log = logging.getLogger(__name__)
 
 
-async def discover_one(timeout: float = 5.0) -> models.Player:
+async def discover_one(timeout: float = 1.0) -> models.Player:
     '''Discover the local Sonos network and return one arbitrary Player.
 
     Send a UPnP discovery packet and wait for responses to arrive. As soon
@@ -28,6 +28,16 @@ async def discover_one(timeout: float = 5.0) -> models.Player:
     return it. Ignore any further responses.
     '''
     return await discover.discover_one(timeout)
+
+
+async def discover_all(timeout: float = 1.0) -> AsyncGenerator[models.Player, None]:
+    '''Discover the local Sonos network and return one arbitrary Player.
+
+    Send a UPnP discovery packet and wait for responses to arrive. As soon
+    as one arrives, construct a Player object based on that response and
+    return it. Ignore any further responses.
+    '''
+    return discover.discover_all(timeout)
 
 
 def get_player(ip_address: str) -> models.Player:
