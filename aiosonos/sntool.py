@@ -46,6 +46,23 @@ def groups():
     asyncio.run(_groups())
 
 
+@main.group()
+def queue():
+    pass
+
+
+@queue.command()
+@click.argument('group')  # group ID, player ID, player IP address, or player name
+def list(group: str):
+    asyncio.run(_queue_list(group))
+
+
+@queue.command()
+@click.argument('group')
+def clear(group: str):
+    asyncio.run(_queue_clear(group))
+
+
 async def _discover_one(timeout: float, details: bool):
     try:
         player = await sonos.discover_one(timeout)
@@ -78,6 +95,43 @@ async def _groups():
         for player in group.members:
             print('  ' + player.describe())
     await sonos.close()
+
+
+async def _queue_list(group_id: str):
+    try:
+        group = await _find_group(group_id)
+        tracks = await sonos.get_queue(group.coordinator)
+        for track in tracks:
+            uris = ','.join([res.uri for res in track.res])
+            print(f'{track.id} {track.creator!r} {track.album!r} {track.title!r} {uris}')
+    finally:
+        await sonos.close()
+
+
+async def _queue_clear(group_id: str):
+    try:
+        group = await _find_group(group_id)
+        await sonos.clear_queue(group.coordinator)
+    finally:
+        await sonos.close()
+
+
+async def _find_group(group_id: str) -> models.Group:
+    player = await sonos.discover_one()
+    network = await sonos.get_group_state(player)
+    group = coordinator = None
+    for group in network.groups:
+        coordinator = group.coordinator
+        if group.uuid == group_id:
+            return group
+        if coordinator.uuid == group_id:
+            return group
+        if coordinator.ip_address == group_id:
+            return group
+        if coordinator.name is not None and group_id.lower() in coordinator.name.lower():
+            return group
+    else:
+        sys.exit(f'sntool: error: found no group identified by "{group_id}"')
 
 
 if __name__ == '__main__':
