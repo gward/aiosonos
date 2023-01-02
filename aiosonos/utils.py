@@ -57,8 +57,8 @@ def ns_tag(ns_id, tag):
     return '{{{}}}{}'.format(NAMESPACES[ns_id], tag)
 
 
-def log_network(log: logging.Logger, fmt: str, *args: Any, data: Union[bytes, str]):
-    if log.isEnabledFor(logging.DEBUG - 1):  # log the data too
+def log_network(log: logging.Logger, fmt: str, *args: Any, data: Union[None, bytes, str]):
+    if log.isEnabledFor(logging.DEBUG - 1) and data:  # log the data too
         fmt += ':\n%s'
         if isinstance(data, bytes):
             data = data.decode('utf-8')

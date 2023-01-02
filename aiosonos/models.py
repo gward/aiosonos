@@ -61,10 +61,14 @@ class Player:
             ' (coordinator)' if self.is_coordinator else '',
         )
 
-    def get_url(self, path: Optional[str]) -> Optional[str]:
-        if path:
-            return urlparse.urljoin(self.base_url, path)
-        return None
+    def get_url(self, path: str) -> str:
+        return urlparse.urljoin(self.base_url, path)
+
+
+class PlayerDescription:
+    udn: str
+    room_name: str
+    display_name: str
 
 
 class Group:

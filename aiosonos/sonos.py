@@ -15,7 +15,7 @@ from typing import Any, AsyncGenerator, Dict, List
 
 from didl_lite import didl_lite as didl
 
-from . import models, upnp, discover, event, parsers
+from . import models, upnp, discover, event, parsers, utils
 
 log = logging.getLogger(__name__)
 
@@ -51,6 +51,16 @@ def get_player(ip_address: str) -> models.Player:
     ``ip_address``, always return the same object.
     '''
     return models.Player.get_instance(ip_address)
+
+
+async def get_player_description(player: models.Player) -> models.PlayerDescription:
+    session = upnp.get_session()     # hmmmm: maybe this does not belong in upnp module?
+    url = player.get_url('/xml/device_description.xml')
+    utils.log_network(log, 'Player description request: GET %s', url, data=None)
+    resp = await session.get(url)
+    data = await resp.text()
+    utils.log_network(log, 'Player description response: %d', resp.status, data=data)
+    return parsers.parse_player_description(data)
 
 
 async def get_group_state(player: models.Player) -> models.Network:

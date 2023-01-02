@@ -6,7 +6,7 @@ import sys
 
 import click
 
-from . import sonos
+from . import models, sonos
 
 
 _debug: int = 0
@@ -35,9 +35,10 @@ def main(debug):
 @click.option('--all/--one', '-a/-1', 'discover_all',
               default=False, help='Wait for all players to be discovered')
 @click.option('--timeout', '-t', default=1.0)
-def discover(discover_all, timeout):
-    task = _discover_all if discover_all else _discover
-    asyncio.run(task(timeout))
+@click.option('--details', '-d', is_flag=True, help='Fetch detailed device description')
+def discover(discover_all, timeout, details):
+    task = _discover_all if discover_all else _discover_one
+    asyncio.run(task(timeout, details))
 
 
 @main.command()
@@ -45,16 +46,28 @@ def groups():
     asyncio.run(_groups())
 
 
-async def _discover(timeout: float):
-    player = await sonos.discover_one(timeout)
-    print(player)
-    await sonos.close()
+async def _discover_one(timeout: float, details: bool):
+    try:
+        player = await sonos.discover_one(timeout)
+        await _show_player(player, details)
+    finally:
+        await sonos.close()
 
 
-async def _discover_all(timeout: float):
-    async for player in await sonos.discover_all(timeout):
-        print(player)
-    await sonos.close()
+async def _discover_all(timeout: float, details: bool):
+    try:
+        async for player in await sonos.discover_all(timeout):
+            await _show_player(player, details)
+    finally:
+        await sonos.close()
+
+
+async def _show_player(player: models.Player, details: bool):
+    if details:
+        desc = await sonos.get_player_description(player)
+        print(f'{player.ip_address} {desc.udn} {desc.room_name!r} {desc.display_name!r}')
+    else:
+        print(f'{player.ip_address}')
 
 
 async def _groups():

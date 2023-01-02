@@ -11,6 +11,47 @@ from . import models
 log = logging.getLogger(__name__)
 
 
+def parse_player_description(description_xml: str) -> models.PlayerDescription:
+    # GET /xml/device_description.xml returns something like this:
+
+    #   <root xmlns="urn:schemas-upnp-org:device-1-0">
+    #     <specVersion> ... </specVersion>
+    #     <device>
+    #       <deviceType>urn:schemas-upnp-org:device:ZonePlayer:1</deviceType>
+    #       <friendlyName>192.168.45.130 - Sonos Play:1</friendlyName>
+    #       <manufacturer>Sonos, Inc.</manufacturer>
+    #       <manufacturerURL>http://www.sonos.com</manufacturerURL>
+    #       <modelNumber>S1</modelNumber>
+    #       <modelDescription>Sonos Play:1</modelDescription>
+    #       <modelName>Sonos Play:1</modelName>
+    #       <modelURL>http://www.sonos.com/products/zoneplayers/S1</modelURL>
+    #       <softwareVersion>57.13-34140</softwareVersion>
+    #       <swGen>1</swGen>
+    #       <hardwareVersion>1.8.3.7-1.0</hardwareVersion>
+    #       <serialNum>5C-AA-FD-49-94-0A:8</serialNum>
+    #       <MACAddress>5C:AA:FD:49:94:0A</MACAddress>
+    #       <UDN>uuid:RINCON_5CAAFD49940A01400</UDN>
+    #       <roomName>Kitchen</roomName>
+    #       <displayName>Play:1</displayName>
+    #       ...
+    #     </device>
+    def gettext(elem: ElementTree.Element, tag: str) -> str:
+        child = elem.find(ns + tag)
+        assert child is not None, f'element {elem} has no child {tag}'
+        assert child.text is not None
+        return child.text
+
+    ns = '{urn:schemas-upnp-org:device-1-0}'
+    tree = ElementTree.fromstring(description_xml)
+    device_element = tree.find(ns + 'device')
+    assert device_element is not None, 'element <device> not found in player description'
+    desc = models.PlayerDescription()
+    desc.udn = gettext(device_element, 'UDN')
+    desc.room_name = gettext(device_element, 'roomName')
+    desc.display_name = gettext(device_element, 'displayName')
+    return desc
+
+
 def parse_group_state(groups_xml: str) -> models.Network:
     """
     :return: (groups, visible_players, all_players)
