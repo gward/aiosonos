@@ -1,12 +1,14 @@
 '''command-line interface to sonos network using aiosonos'''
 
 import asyncio
+import datetime
 import logging
 import sys
 
 import click
+from didl_lite import didl_lite as didl
 
-from . import models, sonos
+from . import event, models, sonos, upnp
 
 
 _debug: int = 0
@@ -63,6 +65,11 @@ def clear(group: str):
     asyncio.run(_queue_clear(group))
 
 
+@main.command()
+def monitor():
+    asyncio.run(_monitor())
+
+
 async def _discover_one(timeout: float, details: bool):
     try:
         player = await sonos.discover_one(timeout)
@@ -112,6 +119,53 @@ async def _queue_clear(group_id: str):
     try:
         group = await _find_group(group_id)
         await sonos.clear_queue(group.coordinator)
+    finally:
+        await sonos.close()
+
+
+async def _monitor():
+    def ts():
+        return str(datetime.datetime.now())
+
+    def topology_cb(event: event.Event):
+        network = event.properties.get('ZoneGroupState')
+        details = ''
+        if isinstance(network, models.Network):
+            details = (' group coordinators: ' +
+                       ','.join(coord.ip_address for coord in network.get_coordinators()))
+        print(f'{ts()} {event.service_type}: {event.player}{details}')
+
+    def transport_cb(event: event.Event):
+        transport_state = event.properties['TransportState']
+        track_num = event.properties['CurrentTrack']
+        track_duration = event.properties['CurrentTrackDuration']
+        track = event.properties['CurrentTrackMetaData']
+        details = ' (no track metadata)'
+        if isinstance(track, didl.MusicTrack):
+            details = (f': track {track_num} '
+                       f'{track.creator!r} {track.title!r} {track_duration}')
+        print(f'{ts()} {event.service_type}: '
+              f'{event.player} {transport_state}{details}')
+
+    # Get all groups and subscribe to interesting events.
+    try:
+        # Only need topology events from one player.
+        player = await sonos.discover_one()
+        await sonos.subscribe(
+            player, upnp.SERVICE_TOPOLOGY, topology_cb, auto_renew=True)
+
+        # For other events, subscribe to each group coordinator.
+        network = await sonos.get_group_state(player)
+        for group in network.groups:
+            await sonos.subscribe(
+                group.coordinator,
+                upnp.SERVICE_AVTRANSPORT,
+                transport_cb,
+                auto_renew=True)
+
+        while True:
+            await asyncio.sleep(1)
+
     finally:
         await sonos.close()
 
