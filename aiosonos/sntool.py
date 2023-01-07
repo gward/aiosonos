@@ -3,6 +3,7 @@
 import asyncio
 import datetime
 import logging
+import socket
 import sys
 
 import click
@@ -54,15 +55,15 @@ def queue():
 
 
 @queue.command()
-@click.argument('group')  # group ID, player ID, player IP address, or player name
-def list(group: str):
-    asyncio.run(_queue_list(group))
+@click.argument('target')  # group ID, player ID, player IP address, or player name
+def list(target: str):
+    asyncio.run(_queue_list(target))
 
 
 @queue.command()
-@click.argument('group')
-def clear(group: str):
-    asyncio.run(_queue_clear(group))
+@click.argument('target')
+def clear(target: str):
+    asyncio.run(_queue_clear(target))
 
 
 @main.command()
@@ -104,10 +105,10 @@ async def _groups():
     await sonos.close()
 
 
-async def _queue_list(group_id: str):
+async def _queue_list(target: str):
     try:
-        group = await _find_group(group_id)
-        tracks = await sonos.get_queue(group.coordinator)
+        player = await _resolve_target(target)
+        tracks = await sonos.get_queue(player)
         for track in tracks:
             uris = ','.join([res.uri for res in track.res])
             print(f'{track.id} {track.creator!r} {track.album!r} {track.title!r} {uris}')
@@ -115,10 +116,10 @@ async def _queue_list(group_id: str):
         await sonos.close()
 
 
-async def _queue_clear(group_id: str):
+async def _queue_clear(target: str):
     try:
-        group = await _find_group(group_id)
-        await sonos.clear_queue(group.coordinator)
+        player = await _resolve_target(target)
+        await sonos.clear_queue(player)
     finally:
         await sonos.close()
 
@@ -170,22 +171,31 @@ async def _monitor():
         await sonos.close()
 
 
-async def _find_group(group_id: str) -> models.Group:
+async def _resolve_target(target: str) -> models.Player:
+    # If it looks like a hostname or IP address, then assume that it is.
+    # This accepts bogus or non-existent IP addresses!
+    try:
+        addr = socket.gethostbyname(target)  # XXX blocking I/O!
+        return models.Player(addr)
+    except socket.gaierror:
+        pass
+
+    # Otherwise, discover the local Sonos network and try to resolve the
+    # target name there.
     player = await sonos.discover_one()
     network = await sonos.get_group_state(player)
-    group = coordinator = None
     for group in network.groups:
         coordinator = group.coordinator
-        if group.uuid == group_id:
-            return group
-        if coordinator.uuid == group_id:
-            return group
-        if coordinator.ip_address == group_id:
-            return group
-        if coordinator.name is not None and group_id.lower() in coordinator.name.lower():
-            return group
+        if group.uuid == target:
+            return coordinator
+        if coordinator.uuid == target:
+            return coordinator
+        if coordinator.ip_address == target:
+            return coordinator
+        if coordinator.name is not None and target.lower() in coordinator.name.lower():
+            return coordinator
     else:
-        sys.exit(f'sntool: error: found no group identified by "{group_id}"')
+        sys.exit(f'sntool: error: found no group identified by "{target}"')
 
 
 if __name__ == '__main__':
