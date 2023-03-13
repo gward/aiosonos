@@ -161,7 +161,13 @@ def parse_group_state(groups_xml: str) -> models.Network:
                 members.append(player)
             # Now create a Group with this info and add it to the list
             # of groups
-        assert group_coordinator is not None, 'found group with no coordinator'
+        if group_coordinator is None:
+            log.warn(
+                'Found group with no coordinator (player offline?): '
+                'group ID %s, coordinator ID %s',
+                group_uuid, coordinator_uuid)
+            continue
+
         groups.append(models.Group(group_uuid, group_coordinator, members))
 
     return models.Network(groups, visible_players, all_players)
