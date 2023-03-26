@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import asyncio.protocols
 import asyncio.transports
@@ -6,7 +8,7 @@ import re
 import socket
 import struct
 import sys
-from typing import AsyncGenerator, Optional, Tuple
+from typing import Any, AsyncGenerator, Coroutine, Optional, Tuple
 
 from . import models, utils
 
@@ -52,7 +54,7 @@ class DiscoveryProtocol(asyncio.protocols.DatagramProtocol):
         self.multicast_port = multicast_port
         self.player_queue = player_queue
 
-    def close(self):
+    def close(self) -> None:
         if self.transport is not None:
             self.transport.close()
 
@@ -122,7 +124,7 @@ async def discover_all(timeout: float) -> AsyncGenerator[models.Player, None]:
         transport.close()
 
 
-def _setup_discover():
+def _setup_discover() -> Tuple[asyncio.Queue[models.Player], Coroutine[Any, Any, Tuple]]:
     loop = utils.get_event_loop()
     player_queue: asyncio.Queue[models.Player] = asyncio.Queue()
 
