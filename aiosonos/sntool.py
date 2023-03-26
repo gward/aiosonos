@@ -134,7 +134,8 @@ async def _monitor():
         if isinstance(network, models.Network):
             details = (': group coordinators: ' +
                        ','.join(coord.ip_address for coord in network.get_coordinators()))
-        print(f'{ts()} received {event.service_type} event: player {event.player}{details}')
+        print(f'{ts()} received {event.service_type} event: '
+              f'player {event.player}{details}')
 
     def transport_cb(event: event.Event):
         transport_state = event.properties['TransportState']
