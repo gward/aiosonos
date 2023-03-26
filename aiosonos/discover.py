@@ -48,7 +48,7 @@ class DiscoveryProtocol(asyncio.protocols.DatagramProtocol):
             data: bytes,
             multicast_group: str,
             multicast_port: int,
-            player_queue: asyncio.Queue[models.Player]):
+            player_queue: 'asyncio.Queue[models.Player]'):
         self.data = data
         self.multicast_group = multicast_group
         self.multicast_port = multicast_port
