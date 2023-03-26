@@ -132,9 +132,9 @@ async def _monitor():
         network = event.properties.get('ZoneGroupState')
         details = ''
         if isinstance(network, models.Network):
-            details = (' group coordinators: ' +
+            details = (': group coordinators: ' +
                        ','.join(coord.ip_address for coord in network.get_coordinators()))
-        print(f'{ts()} {event.service_type}: {event.player}{details}')
+        print(f'{ts()} received {event.service_type} event: player {event.player}{details}')
 
     def transport_cb(event: event.Event):
         transport_state = event.properties['TransportState']
@@ -145,8 +145,8 @@ async def _monitor():
         if isinstance(track, didl.MusicTrack):
             details = (f': track {track_num} '
                        f'{track.creator!r} {track.title!r} {track_duration}')
-        print(f'{ts()} {event.service_type}: '
-              f'{event.player} {transport_state}{details}')
+        print(f'{ts()} received {event.service_type} event: '
+              f'player {event.player} {transport_state}{details}')
 
     # Get all groups and subscribe to interesting events.
     try:
