@@ -118,7 +118,7 @@ class Subscription:
             headers=req_headers,
             timeout=3.0,
         )
-        response.raise_for_status()
+        await check_response(response)
 
         headers = response.headers
         self.sid = headers["sid"]
@@ -175,7 +175,7 @@ class Subscription:
             headers=req_headers,
             timeout=3.0,
         )
-        response.raise_for_status()
+        await check_response(response)
 
         self.timeout = self._parse_timeout(response.headers)
         self.timestamp = time.time()
@@ -198,6 +198,7 @@ class Subscription:
             headers=req_headers,
             timeout=1.0,
         )
+        await check_response(response)
         log.info('Subscription %s: unsubscribe response: %r %s',
                  self, response.status, response.reason)
         if response.status == 200:
@@ -224,6 +225,22 @@ class Subscription:
     def handle_event(self, event: Event):
         log.info('Subscription %s: received event %r', self.sid, event)
         self.callback(event)
+
+
+async def check_response(response):
+    if response.status >= 400:
+        body = (await response.text()).strip()
+        if body:
+            body = f' (response body: {body[0:500]})'
+        else:
+            body = ' (no response body)'
+        log.warn(
+            'Received %d %s error response from %s%s',
+            response.status,
+            response.reason,
+            response.url,
+            body)
+        response.raise_for_status()
 
 
 class EventServer:
