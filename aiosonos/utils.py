@@ -23,8 +23,12 @@ def prettify(xml_text: str) -> str:
 
     '''
     import xml.dom.minidom
+    import xml.parsers.expat
 
-    reparsed = xml.dom.minidom.parseString(xml_text)
+    try:
+        reparsed = xml.dom.minidom.parseString(xml_text)
+    except xml.parsers.expat.ExpatError:
+        return xml_text            # I guess it's not really XML text after all
     return reparsed.toprettyxml(indent='  ', newl='\n')
 
 
