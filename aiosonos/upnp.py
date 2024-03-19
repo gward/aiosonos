@@ -2,6 +2,7 @@ import logging
 from xml.sax import saxutils
 from xml.etree import ElementTree
 from typing import Optional, NoReturn, Any, Dict, List, Tuple
+import urllib.parse as urlparse
 
 import aiohttp.client
 
@@ -210,7 +211,7 @@ class UPnPClient:
 
         '''
         headers, body = self.build_command(service, action, args)
-        url = self.base_url + service.control_url
+        url = urlparse.urljoin(self.base_url, service.control_url)
         utils.log_network(
             log,
             'Sending UPnP command %s to %s',
@@ -295,7 +296,7 @@ class UPnPClient:
             version=service.version,
         )
         soap_action_template = (
-            'urn:schemas-upnp-org:service:{service_type}:{version}#{action}'
+            '"urn:schemas-upnp-org:service:{service_type}:{version}#{action}"'
         )
         soap_action = soap_action_template.format(
             service_type=service.service_type, version=service.version, action=action
