@@ -241,10 +241,7 @@ async def get_queue(
     :param max_items: Maximum number of returned matches
     :param full_album_art_uri: If the album art URI should include the
         IP address
-    :returns: A :py:class:`~.models.Queue` object
-
-    This method is heavily based on Sam Soffes (aka soffes) ruby
-    implementation
+    :returns: A :py:class:`~.models.TrackList` object
     '''
     client = upnp.get_upnp_client(player)
     result = await client.send_command(
@@ -262,11 +259,31 @@ async def get_queue(
 
     items = parsers.parse_didl(result['Result'])
 
-    tracks: List[didl.MusicTrack] = []
+    tracks: List[models.Track] = []
     for item in items:
         if isinstance(item, didl.MusicTrack):
-            item.album_art_uri = player.get_url(item.album_art_uri)   # type: ignore
-            tracks.append(item)
+            queue_pos = -1
+            if isinstance(item.id, str) and '/' in item.id:
+                queue_pos = int(item.id.split('/')[1])      # parse "Q:0/5" to 5
+            album_art_uri = player.get_url(item.album_art_uri)
+
+            duration = -1
+            if item.res and item.res[0].duration is not None:
+                duration = parse_time(item.res[0].duration)
+
+            track_uri = None
+            if item.res and item.res[0].uri is not None:
+                track_uri = item.res[0].uri
+
+            tracks.append(models.Track(
+                artist=item.creator,
+                album=item.album,
+                title=item.title,
+                duration=duration,
+                track_uri=track_uri,
+                album_art_uri=album_art_uri,
+                queue_pos=queue_pos,
+            ))
 
     return models.TrackList(
         tracks,

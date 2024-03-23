@@ -2,8 +2,6 @@ import logging
 from typing import Optional, ClassVar, Dict, List
 from urllib import parse as urlparse
 
-from didl_lite import didl_lite as didl
-
 log = logging.getLogger(__name__)
 
 
@@ -122,16 +120,57 @@ class Network:                  # or is this a household?
         return None
 
 
+class Track:
+    '''A single music track, either currently playing or in the queue.'''
+    artist: str
+    album: str
+    title: str
+    duration: int        # in seconds (-1 for unknown)
+    track_uri: Optional[str]
+    album_art_uri: Optional[str]
+
+    # The two "position" fields are 0-based, or -1 for unknown: album_pos=3
+    # means this is the fourth track of its album, and queue_pos=0 means
+    # this is the first track of the current queue.
+    album_pos: int       # sequence of this track in its album
+    queue_pos: int       # sequence of this track in current queue (playlist)
+
+    def __init__(
+            self,
+            artist: str,
+            album: str,
+            title: str,
+            duration: int = -1,
+            track_uri: Optional[str] = None,
+            album_art_uri: Optional[str] = None,
+            album_pos: int = -1,
+            queue_pos: int = -1,
+    ):
+        self.artist = artist
+        self.album = album
+        self.title = title
+        self.duration = duration
+        self.track_uri = track_uri
+        self.album_art_uri = album_art_uri
+        self.album_pos = album_pos
+        self.queue_pos = queue_pos
+
+    def __str__(self):
+        return f'{self.title} ({self.artist})'
+
+    __repr__ = stdrepr
+
+
 class TrackList:
     '''A list of music tracks. Used for queues and search results.'''
-    tracks: List[didl.MusicTrack]
+    tracks: List[Track]
     number_returned: int
     total_matches: int
     update_id: str
 
     def __init__(
             self,
-            tracks: List[didl.MusicTrack],
+            tracks: List[Track],
             number_returned: int,
             total_matches: int,
             update_id: str):

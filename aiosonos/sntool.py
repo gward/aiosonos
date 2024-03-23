@@ -111,8 +111,13 @@ async def _queue_list(target: str):
         player = await _resolve_target(target)
         tracks = await sonos.get_queue(player)
         for track in tracks:
-            uris = ','.join([res.uri for res in track.res])
-            print(f'{track.id} {track.creator!r} {track.album!r} {track.title!r} {uris}')
+            print(
+                f'{track.queue_pos} '
+                + f'{track.artist!r} '
+                + f'{track.album!r} '
+                + f'{track.title!r} '
+                + f'{track.track_uri}'
+            )
     finally:
         await sonos.close()
 
