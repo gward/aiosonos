@@ -29,6 +29,7 @@ def main(debug):
         0: logging.WARNING,
         1: logging.INFO,
         2: logging.DEBUG,
+        3: logging.DEBUG - 1,      # log request/response bodies too
     }
     level = level_map.get(debug, logging.DEBUG - 1)
     logging.getLogger('aiosonos').setLevel(level)
